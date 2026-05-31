@@ -3,11 +3,23 @@ import axios from 'axios'
 const AMAP_KEY = process.env.AMAP_KEY
 const BASE = 'https://restapi.amap.com/v3'
 
-const BLOCK_TYPES = ['交通设施','政府机构','公司企业','道路附属','地名地址','门牌信息','室内设施','通行设施']
+const ALLOW_TYPES = [
+  '风景名胜','名胜古迹','旅游景点',
+  '公园广场','城市广场',
+  '动物园','植物园','水族馆','海洋馆',
+  '博物馆','美术馆','展览馆','科技馆','纪念馆','陈列馆',
+  '游乐场','游乐园','主题乐园','度假村','度假区','温泉','滑雪场',
+  '文物古迹','文物保护','自然保护区','地质公园','森林公园',
+  '教堂','寺庙','道观','清真寺','历史建筑','名人故居','故居',
+  '特色商业街','步行街','历史街区','文化旅游',
+  '海滨','沙滩','湖泊','山岳','瀑布','河流','湿地','岛屿','峡谷','洞穴',
+  '赏花','采摘','农家乐','田园','农场',
+  '登山','徒步','漂流','骑行',
+]
 
 function isRelevant(type) {
   if (!type) return false
-  return !BLOCK_TYPES.some(b => type.includes(b))
+  return ALLOW_TYPES.some(a => type.includes(a))
 }
 
 export async function searchPOI(keyword, city = '', offset = 20, page = 1) {

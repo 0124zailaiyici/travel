@@ -50,7 +50,18 @@ router.get('/search', async (req, res) => {
   let amapResults = []
   try {
     const searchCity = city || (lat && lng ? await getCityFromCoords(lat, lng) : '')
-    if (searchCity) amapResults = await searchPOI(keyword || '旅游景点', searchCity)
+    if (searchCity) {
+      amapResults = await searchPOI(keyword || '旅游景点', searchCity)
+      // if keyword is generic (city name) and no amap results, search by attraction types
+      if (amapResults.length < 3 && keyword === searchCity) {
+        for (const t of ['公园','博物馆','景点','广场','步行街','乐园']) {
+          const more = await searchPOI(t, searchCity)
+          for (const m of more) {
+            if (!amapResults.find(a => a.name === m.name)) amapResults.push(m)
+          }
+        }
+      }
+    }
   } catch (e) { console.error('Amap search error:', e.message) }
   const seen = new Set(parsed.map(d => d.name))
   const merged = [...parsed]
