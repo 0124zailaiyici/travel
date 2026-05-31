@@ -22,7 +22,11 @@ export async function generateItinerary(destination) {
    - afternoon: 同上，详细
    - evening: 同上，含具体餐厅推荐和招牌菜
    - meals: 当天推荐美食（具体店名+必点菜）
-2. "tips" — 至少8条避坑/实用建议，如：最佳拍照点、排队策略、省钱技巧、天气应对、周边彩蛋
+2. "transport" — 详细交通方案，含：
+   - "to_destination": 从最近大城市/机场/高铁站到目的地的具体方式（如"从桂林站乘高铁到阳朔站，出站左转50米乘阳朔公交1路到西街口"）
+   - "around": 当地交通建议（如"租电动车30元/天，打车起步价9元"）
+   - "parking": 自驾停车建议（如果没有可以写"无"）
+3. "tips" — 至少8条避坑/实用建议，如：最佳拍照点、排队策略、省钱技巧、天气应对、周边彩蛋
 3. "budget" — 预算明细，每个分类含total和items数组，示例：
    "transport": {"total": 200, "items": [{"name":"高铁往返","cost":150},{"name":"市内公交","cost":50}]}
    "accommodation": {"total": 400, "items": [{"name":"民宿两晚","cost":400}]}

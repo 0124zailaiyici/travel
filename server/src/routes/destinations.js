@@ -174,6 +174,9 @@ router.get('/:id', async (req, res) => {
   const highlights = Array.isArray(dest.highlights) ? dest.highlights : JSON.parse(dest.highlights || '[]')
   const tags = Array.isArray(dest.tags) ? dest.tags : JSON.parse(dest.tags || '[]')
   const tips = db.prepare('SELECT content FROM tips WHERE destination_id = ? ORDER BY sort_order').all(dest.id)
+  const transportRow = db.prepare('SELECT amount FROM budgets WHERE destination_id = ? AND category = ?').get(dest.id, '_transport')
+  let transportDetail = null
+  if (transportRow) { try { transportDetail = JSON.parse(transportRow.amount) } catch(e) {} }
   const budgets = db.prepare('SELECT category, amount FROM budgets WHERE destination_id = ?').all(dest.id)
   let budget = {}
   const detail = budgets.find(b => b.category === '_detail')
@@ -218,7 +221,7 @@ router.get('/:id', async (req, res) => {
 
   res.json(addImageUrl({
     ...dest, highlights, tags, itinerary,
-    tips: tips.map(t => t.content), budget, themes, distance, themeIcon, weather
+    tips: tips.map(t => t.content), budget, themes, distance, themeIcon, weather, transportDetail
   }))
 })
 

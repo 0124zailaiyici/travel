@@ -57,6 +57,13 @@ for (const dest of destinations) {
       }
     }
 
+    // save transport detail
+    if (gen.transport) {
+      db.prepare('DELETE FROM budgets WHERE destination_id = ? AND category = ?').run(dest.id, '_transport')
+      db.prepare('INSERT INTO budgets (id, destination_id, category, amount) VALUES (?, ?, ?, ?)')
+        .run(uuid(), dest.id, '_transport', JSON.stringify(gen.transport))
+    }
+
     // save budget
     if (gen.budget) {
       db.prepare('DELETE FROM budgets WHERE destination_id = ?').run(dest.id)

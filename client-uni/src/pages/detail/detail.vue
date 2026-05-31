@@ -77,9 +77,23 @@
           </view>
         </view>
 
-        <view class="sec" v-if="detail.transport_guide">
-          <text class="sec-tt">🚗 交通</text>
-          <view class="tb">{{ detail.transport_guide }}</view>
+        <view class="sec" v-if="detail.transportDetail || detail.transport_guide">
+          <text class="sec-tt">🚗 交通方案</text>
+          <view v-if="detail.transportDetail">
+            <view class="tr-section" v-if="detail.transportDetail.to_destination">
+              <text class="tr-label">🚄 怎么去</text>
+              <text class="tr-text">{{ detail.transportDetail.to_destination }}</text>
+            </view>
+            <view class="tr-section" v-if="detail.transportDetail.around">
+              <text class="tr-label">🚌 当地交通</text>
+              <text class="tr-text">{{ detail.transportDetail.around }}</text>
+            </view>
+            <view class="tr-section" v-if="detail.transportDetail.parking">
+              <text class="tr-label">🚗 自驾停车</text>
+              <text class="tr-text">{{ detail.transportDetail.parking }}</text>
+            </view>
+          </view>
+          <view class="tb" v-else>{{ detail.transport_guide }}</view>
         </view>
 
         <view class="ab"><button class="nav-bt" @tap="navigate">📍 导航去</button></view>
@@ -197,6 +211,9 @@ function navigate() {
 .bg-item { font-size: 22rpx; color: #5C4A46; display: block; margin: 4rpx 0; line-height: 1.5; }
 
 .tb { background: rgba(91,123,90,0.06); border-radius: 12rpx; padding: 16rpx; font-size: 22rpx; color: #8A7A76; line-height: 1.7; }
+.tr-section { margin-bottom: 16rpx; }
+.tr-label { font-size: 24rpx; font-weight: 600; color: #5B7B5A; display: block; margin-bottom: 6rpx; }
+.tr-text { font-size: 22rpx; color: #8A7A76; line-height: 1.7; display: block; }
 
 .ab { padding: 20rpx 24rpx 40rpx; }
 .nav-bt { width: 100%; padding: 26rpx; background: linear-gradient(135deg,#C4817A,#9A5E58); color: #fff; border: none; border-radius: 50rpx; font-size: 28rpx; font-weight: 600; box-shadow: 0 6rpx 24rpx rgba(196,129,122,0.3); }
