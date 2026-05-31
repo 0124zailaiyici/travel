@@ -18,5 +18,6 @@ export const api = {
   searchDestinations: (q, city, loc) => request('/destinations/search', { q, city, lat: loc?.lat, lng: loc?.lng }),
   getNearby: (loc) => request('/destinations/nearby', { lat: loc?.lat, lng: loc?.lng }),
   getDetail: (id, loc) => request(`/destinations/${id}`, { lat: loc?.lat, lng: loc?.lng }),
-  getInSeason: () => request('/destinations/in-season')
+  getInSeason: () => request('/destinations/in-season'),
+  getFavorites: (ids) => request('/destinations/batch', { ids: ids.join(',') })
 }

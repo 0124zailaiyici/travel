@@ -1,0 +1,61 @@
+<template>
+  <view class="fp">
+    <view class="fp-hd">❤️ 我的收藏</view>
+    <view class="fp-empty" v-if="!loading && list.length === 0">
+      <text class="fp-e-icon">🔖</text>
+      <text class="fp-e-tt">还没有收藏</text>
+      <text class="fp-e-sub">在目的地详情页点击❤️收藏</text>
+    </view>
+    <view class="fp-list" v-if="list.length">
+      <view class="fp-card" v-for="d in list" :key="d.id" @tap="goDetail(d.id)">
+        <image class="fp-img" :src="d.image_url" mode="aspectFill" lazy-load @error="d.imgErr = true" v-if="!d.imgErr"></image>
+        <view class="fp-img" v-else :style="'background:' + (bgList[parseInt(d.id?.replace('d','')||'0') % bgList.length])">
+          <text class="fp-em">{{ d.themeIcon || '🌸' }}</text>
+        </view>
+        <view class="fp-body">
+          <text class="fp-name">{{ d.name }}</text>
+          <text class="fp-desc">{{ d.description }}</text>
+          <view class="fp-meta">
+            <text>⭐ {{ d.rating }}</text>
+            <text>{{ d.best_season || '全年' }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { api } from '../../api/index.js'
+
+const list = ref([])
+const loading = ref(true)
+const bgList = ['linear-gradient(135deg,#E8B4AE,#C4817A)','linear-gradient(135deg,#8BA88A,#5B7B5A)','linear-gradient(135deg,#E8C4A0,#C4817A)','linear-gradient(135deg,#C4817A,#5B7B5A)','linear-gradient(135deg,#F0D5C0,#E8B4AE)']
+
+onMounted(async () => {
+  try {
+    const favs = JSON.parse(uni.getStorageSync('huaxi_favs') || '[]')
+    if (favs.length) list.value = await api.getFavorites(favs)
+  } catch(e) { console.error(e) }
+  finally { loading.value = false }
+})
+function goDetail(id) { uni.navigateTo({ url: `/pages/detail/detail?id=${id}` }) }
+</script>
+
+<style>
+.fp { min-height: 100vh; background: #FDF8F4; padding: 20rpx 24rpx; }
+.fp-hd { font-size: 34rpx; font-weight: 700; color: #2C2422; margin-bottom: 24rpx; }
+.fp-empty { text-align: center; padding: 120rpx 0; }
+.fp-e-icon { font-size: 64rpx; display: block; margin-bottom: 16rpx; }
+.fp-e-tt { font-size: 28rpx; color: #8A7A76; display: block; }
+.fp-e-sub { font-size: 24rpx; color: #C4817A; margin-top: 8rpx; display: block; }
+.fp-list { display: flex; flex-direction: column; gap: 16rpx; }
+.fp-card { display: flex; background: rgba(255,255,255,0.88); border-radius: 20rpx; overflow: hidden; box-shadow: 0 2rpx 14rpx rgba(196,129,122,0.06); }
+.fp-img { width: 160rpx; height: 160rpx; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #f0e8e4; }
+.fp-em { font-size: 48rpx; }
+.fp-body { flex: 1; padding: 14rpx 18rpx; display: flex; flex-direction: column; }
+.fp-name { font-size: 28rpx; font-weight: 600; color: #2C2422; }
+.fp-desc { font-size: 22rpx; color: #8A7A76; margin: 4rpx 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.fp-meta { display: flex; gap: 14rpx; font-size: 20rpx; color: #8A7A76; }
+</style>

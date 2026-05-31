@@ -18,7 +18,7 @@ const emojiMap = {
 
 function addImageUrl(d) {
   if (!d.image_url) {
-    d.image_url = `https://picsum.photos/seed/${d.id || d.name}/600/400`
+    d.image_url = `https://picsum.photos/seed/${d.id || d.name}/400/300`
   }
   return d
 }
@@ -49,16 +49,28 @@ router.get('/search', async (req, res) => {
   }))
   let amapResults = []
   try {
-    const searchCity = city || (lat && lng ? await getCityFromCoords(lat, lng) : '')
-    if (searchCity) {
-      amapResults = await searchPOI(keyword || '旅游景点', searchCity)
-      // if keyword is generic (city name) and no amap results, search by attraction types
-      if (amapResults.length < 3 && keyword === searchCity) {
+    let searchCity = city || (keyword.length <= 3 ? keyword : '')
+    if (!searchCity && lat && lng) {
+      try {
+        searchCity = await Promise.race([
+          getCityFromCoords(lat, lng),
+          new Promise(r => setTimeout(() => r(''), 2000))
+        ])
+      } catch(e) {}
+    }
+    if (keyword) {
+      // parallel search: keyword + fallback categories
+      const searches = [searchPOI(keyword, searchCity)]
+      if (amapResults.length < 3 && searchCity) {
         for (const t of ['公园','博物馆','景点','广场','步行街','乐园']) {
-          const more = await searchPOI(t, searchCity)
-          for (const m of more) {
-            if (!amapResults.find(a => a.name === m.name)) amapResults.push(m)
-          }
+          searches.push(searchPOI(t, searchCity))
+        }
+      }
+      const all = await Promise.all(searches)
+      const seen = new Set()
+      for (const arr of all) {
+        for (const item of arr) {
+          if (!seen.has(item.name)) { amapResults.push(item); seen.add(item.name) }
         }
       }
     }
@@ -139,6 +151,15 @@ router.get('/auto-location', async (req, res) => {
   if (!ipLoc) return res.json({ error: '无法定位' })
   const city = await getCityFromCoords(ipLoc.lat, ipLoc.lng)
   res.json({ ...ipLoc, city })
+})
+
+router.get('/batch', (req, res) => {
+  const ids = (req.query.ids || '').split(',').filter(Boolean)
+  if (!ids.length) return res.json([])
+  const db = getDb()
+  const placeholders = ids.map(() => '?').join(',')
+  const dests = db.prepare(`SELECT * FROM destinations WHERE id IN (${placeholders})`).all(...ids)
+  res.json(dests.map(parseDest).map(addImageUrl))
 })
 
 router.get('/:id', async (req, res) => {

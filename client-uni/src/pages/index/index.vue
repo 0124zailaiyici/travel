@@ -8,6 +8,7 @@
           <text class="logo-sub">发现四季好去处</text>
         </view>
       </view>
+      <text class="hdr-fav" @tap="goFavs">🔖</text>
     </view>
 
     <view class="search-card" @tap="goSearch">
@@ -97,6 +98,7 @@ function retryLocation() {
   clearLocationCache()
   load()
 }
+function goFavs() { uni.navigateTo({ url: '/pages/favorites/favorites' }) }
 function goSearch() { uni.navigateTo({ url: '/pages/search/search' }) }
 function searchTheme(n) { uni.navigateTo({ url: `/pages/search/search?q=${n}` }) }
 function goDetail(id) { uni.navigateTo({ url: `/pages/detail/detail?id=${id}` }) }
@@ -110,6 +112,7 @@ function goDetail(id) { uni.navigateTo({ url: `/pages/detail/detail?id=${id}` })
 .logo-title { font-size: 40rpx; font-weight: 700; color: #2C2422; letter-spacing: 4rpx; line-height: 1.2; }
 .logo-title .rose { color: #C4817A; }
 .logo-sub { font-size: 22rpx; color: #8A7A76; margin-top: 2rpx; }
+.hdr-fav { font-size: 36rpx; position: absolute; top: 28rpx; right: 28rpx; }
 
 .search-card { margin: 16rpx 24rpx 28rpx; padding: 26rpx 28rpx; background: rgba(255,255,255,0.92); border-radius: 24rpx; box-shadow: 0 4rpx 24rpx rgba(196,129,122,0.08); display: flex; align-items: center; gap: 16rpx; }
 .s-icon { font-size: 28rpx; }
