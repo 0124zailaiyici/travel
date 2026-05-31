@@ -1,0 +1,12 @@
+[
+  { "id": "t1", "name": "赏樱", "icon": "🌸", "season": "3-4月", "query_keywords": ["樱花", "赏樱", "樱花季"], "sort_order": 1 },
+  { "id": "t2", "name": "雪山", "icon": "🏔️", "season": "11-3月", "query_keywords": ["雪山", "滑雪", "雪景"], "sort_order": 2 },
+  { "id": "t3", "name": "海岛", "icon": "🏖️", "season": "5-10月", "query_keywords": ["海岛", "海滩", "潜水"], "sort_order": 3 },
+  { "id": "t4", "name": "红叶", "icon": "🍁", "season": "10-11月", "query_keywords": ["红叶", "枫叶", "秋叶"], "sort_order": 4 },
+  { "id": "t5", "name": "赶海", "icon": "🦀", "season": "6-9月", "query_keywords": ["赶海", "海鲜", "渔村"], "sort_order": 5 },
+  { "id": "t6", "name": "烟花", "icon": "🎆", "season": "7-8月", "query_keywords": ["烟花", "花火", "夜景"], "sort_order": 6 },
+  { "id": "t7", "name": "古镇", "icon": "🏯", "season": "全年", "query_keywords": ["古镇", "古村", "水乡"], "sort_order": 7 },
+  { "id": "t8", "name": "露营", "icon": "⛺", "season": "4-10月", "query_keywords": ["露营", "帐篷", "户外"], "sort_order": 8 },
+  { "id": "t9", "name": "温泉", "icon": "♨️", "season": "10-3月", "query_keywords": ["温泉", "泡汤", "疗养"], "sort_order": 9 },
+  { "id": "t10", "name": "花海", "icon": "🌻", "season": "4-8月", "query_keywords": ["花海", "花田", "赏花"], "sort_order": 10 }
+]
