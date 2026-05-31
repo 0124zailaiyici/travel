@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>花期 - 搜索结果</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --rose: #C4817A;
+  --sage: #5B7B5A;
+  --cream: #FDF8F4;
+  --text: #2C2422;
+  --text-secondary: #8A7A76;
+  --card-bg: rgba(255,255,255,0.88);
+  --shadow: 0 4px 20px rgba(196,129,122,0.10);
+  --radius: 18px;
+}
+body {
+  font-family: -apple-system, 'Noto Serif SC', 'PingFang SC', serif;
+  background: var(--cream); color: var(--text);
+  max-width: 430px; margin: 0 auto; min-height: 100vh;
+}
+
+/* search top */
+.search-top {
+  padding: 12px 20px 12px;
+  display: flex; gap: 10px; align-items: center;
+  border-bottom: 1px solid rgba(196,129,122,0.08);
+}
+.search-top input {
+  flex: 1; padding: 12px 16px; border: none;
+  border-radius: 30px; background: rgba(255,255,255,0.85);
+  font-size: 15px; outline: none; font-family: inherit;
+  box-shadow: 0 2px 8px rgba(196,129,122,0.06);
+}
+.search-top .back { font-size: 20px; cursor: pointer; color: var(--text); text-decoration: none; }
+
+/* filter pills */
+.filter-bar {
+  padding: 12px 20px; display: flex; gap: 8px;
+  overflow-x: auto; scrollbar-width: none;
+  border-bottom: 1px solid rgba(196,129,122,0.06);
+}
+.filter-bar::-webkit-scrollbar { display: none; }
+.filter-pill {
+  padding: 6px 18px; border-radius: 20px;
+  font-size: 13px; white-space: nowrap;
+  background: rgba(255,255,255,0.7); color: var(--text-secondary);
+  cursor: pointer; transition: all 0.2s;
+  border: 1px solid rgba(196,129,122,0.1);
+}
+.filter-pill.active {
+  background: var(--rose); color: #fff; border-color: var(--rose);
+}
+
+/* result count */
+.result-count {
+  padding: 12px 20px 8px;
+  font-size: 13px; color: var(--text-secondary);
+}
+.result-count strong { color: var(--rose); }
+
+/* result list */
+.result-list { padding: 0 16px 120px; display: flex; flex-direction: column; gap: 16px; }
+
+/* card - horizontal image layout */
+.card {
+  display: flex; background: var(--card-bg);
+  backdrop-filter: blur(8px); border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow);
+  border: 1px solid rgba(255,255,255,0.5);
+  cursor: pointer; transition: transform 0.2s;
+}
+.card:active { transform: scale(0.98); }
+.card-img {
+  width: 130px; min-height: 130px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; position: relative;
+}
+.card-img .badge {
+  position: absolute; top: 6px; left: 6px;
+  background: var(--rose); color: #fff;
+  padding: 2px 8px; border-radius: 10px; font-size: 10px;
+}
+.card-body { padding: 12px 14px; flex: 1; display: flex; flex-direction: column; }
+.card-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.card-desc {
+  font-size: 12px; color: var(--text-secondary);
+  overflow: hidden; text-overflow: ellipsis;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  line-height: 1.5; flex: 1;
+}
+.card-meta {
+  display: flex; gap: 10px; align-items: center;
+  margin-top: 8px; font-size: 12px;
+}
+.card-rating { color: #E8A838; }
+.card-dist { color: var(--rose); font-weight: 600; }
+.card-tags { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+.tag {
+  padding: 2px 10px; border-radius: 10px;
+  font-size: 10px; background: rgba(196,129,122,0.08);
+  color: var(--rose);
+}
+
+/* bottom bar */
+.bottom-bar {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 430px;
+  background: rgba(253,248,244,0.92);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(196,129,122,0.1);
+  padding: 8px 24px 20px;
+  display: flex; gap: 12px;
+}
+.bottom-bar input {
+  flex: 1; padding: 12px 16px; border: none;
+  border-radius: 30px; background: rgba(255,255,255,0.85);
+  font-size: 14px; outline: none; font-family: inherit;
+}
+
+.spacer { height: 60px; }
+</style>
+</head>
+<body>
+
+<div class="search-top">
+  <a class="back" href="#">←</a>
+  <input type="text" value="樱花" placeholder="输入主题…">
+</div>
+
+<div class="filter-bar">
+  <span class="filter-pill active">距您最近</span>
+  <span class="filter-pill">评分最高</span>
+  <span class="filter-pill">🌸 赏樱</span>
+  <span class="filter-pill">🏯 古镇</span>
+  <span class="filter-pill">🏔️ 雪山</span>
+</div>
+
+<div class="result-count">找到 <strong>12</strong> 个与「樱花」相关的目的地</div>
+
+<div class="result-list">
+  <div class="card">
+    <div class="card-img" style="background: linear-gradient(135deg, #E8B4AE, #C4817A);">
+      🌸<span class="badge">3.2km</span>
+    </div>
+    <div class="card-body">
+      <div class="card-title">武汉大学 · 樱花大道</div>
+      <div class="card-desc">百年学府樱花大道，全国最负盛名的赏樱地之一，三月中旬进入盛花期</div>
+      <div class="card-meta">
+        <span class="card-rating">⭐ 4.7</span>
+        <span>1日游</span>
+        <span class="card-dist">3.2km</span>
+      </div>
+      <div class="card-tags"><span class="tag">#赏樱</span><span class="tag">#免费</span><span class="tag">#武汉</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-img" style="background: linear-gradient(135deg, #C4817A, #9A5E58);">
+      🌸<span class="badge">26km</span>
+    </div>
+    <div class="card-body">
+      <div class="card-title">东湖磨山樱花园</div>
+      <div class="card-desc">世界三大樱花之都之一，万株樱花与东湖碧波相映</div>
+      <div class="card-meta">
+        <span class="card-rating">⭐ 4.5</span>
+        <span>1日游</span>
+        <span class="card-dist">26km</span>
+      </div>
+      <div class="card-tags"><span class="tag">#赏樱</span><span class="tag">#东湖</span><span class="tag">#花海</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-img" style="background: linear-gradient(135deg, #8BA88A, #5B7B5A);">
+      🌸<span class="badge">120km</span>
+    </div>
+    <div class="card-body">
+      <div class="card-title">鼋头渚</div>
+      <div class="card-desc">太湖绝佳处，三万株樱花盛放的江南仙境，必去赏樱地</div>
+      <div class="card-meta">
+        <span class="card-rating">⭐ 4.6</span>
+        <span>2日游</span>
+        <span class="card-dist">120km</span>
+      </div>
+      <div class="card-tags"><span class="tag">#赏樱</span><span class="tag">#太湖</span><span class="tag">#无锡</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-img" style="background: linear-gradient(135deg, #E8C4A0, #C4817A);">
+      🌸<span class="badge">350km</span>
+    </div>
+    <div class="card-body">
+      <div class="card-title">杭州西湖</div>
+      <div class="card-desc">苏堤春晓，樱花烂漫，欲把西湖比西子</div>
+      <div class="card-meta">
+        <span class="card-rating">⭐ 4.8</span>
+        <span>1日游</span>
+        <span class="card-dist">350km</span>
+      </div>
+      <div class="card-tags"><span class="tag">#赏樱</span><span class="tag">#西湖</span><span class="tag">#杭州</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="spacer"></div>
+
+</body>
+</html>

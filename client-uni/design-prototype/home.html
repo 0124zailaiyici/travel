@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>花期 - 首页原型</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --rose: #C4817A;
+  --rose-light: #E8B4AE;
+  --rose-dark: #9A5E58;
+  --sage: #5B7B5A;
+  --sage-light: #8BA88A;
+  --cream: #FDF8F4;
+  --warm-gold: #E8C4A0;
+  --text: #2C2422;
+  --text-secondary: #8A7A76;
+  --card-bg: rgba(255,255,255,0.85);
+  --shadow: 0 4px 20px rgba(196,129,122,0.12);
+  --radius: 20px;
+}
+body {
+  font-family: -apple-system, 'Noto Serif SC', 'PingFang SC', serif;
+  background: var(--cream);
+  color: var(--text);
+  max-width: 430px; margin: 0 auto;
+  min-height: 100vh; position: relative;
+  overflow-x: hidden;
+}
+/* decorative background */
+body::before {
+  content: ''; position: fixed; top: -120px; right: -80px;
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(200,180,200,0.15) 0%, transparent 70%);
+  border-radius: 50%; pointer-events: none;
+}
+body::after {
+  content: ''; position: fixed; bottom: -100px; left: -60px;
+  width: 250px; height: 250px;
+  background: radial-gradient(circle, rgba(232,196,160,0.2) 0%, transparent 70%);
+  border-radius: 50%; pointer-events: none;
+}
+
+/* status bar */
+.status-bar { display: flex; justify-content: space-between; padding: 12px 24px 8px; font-size: 12px; color: var(--text-secondary); }
+
+/* header */
+.header {
+  padding: 8px 24px 16px; display: flex; align-items: center; gap: 12px;
+}
+.header h1 { font-size: 28px; font-weight: 700; color: var(--text); letter-spacing: 2px; }
+.header h1 span { color: var(--rose); }
+.header-sub { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+/* search bar */
+.search-bar {
+  margin: 0 20px 28px; position: relative;
+}
+.search-bar input {
+  width: 100%; padding: 16px 20px 16px 52px;
+  border: none; border-radius: 50px;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+  font-size: 16px; color: var(--text); outline: none;
+  font-family: inherit;
+}
+.search-bar input::placeholder { color: var(--text-secondary); font-size: 15px; }
+.search-icon {
+  position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+  font-size: 18px; opacity: 0.6;
+}
+
+/* section header */
+.section-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 0 24px; margin-bottom: 16px;
+}
+.section-header h2 { font-size: 20px; font-weight: 600; }
+.section-header a { font-size: 13px; color: var(--rose); text-decoration: none; }
+
+/* hot themes */
+.theme-scroll {
+  display: flex; gap: 12px; overflow-x: auto;
+  padding: 0 24px 20px; scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.theme-scroll::-webkit-scrollbar { display: none; }
+.theme-item {
+  min-width: 80px; text-align: center;
+  background: var(--card-bg); backdrop-filter: blur(8px);
+  border-radius: 16px; padding: 16px 8px;
+  box-shadow: 0 2px 12px rgba(196,129,122,0.08);
+  border: 1px solid rgba(255,255,255,0.6);
+  cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+}
+.theme-item:active { transform: scale(0.95); }
+.theme-icon { font-size: 32px; display: block; margin-bottom: 6px; }
+.theme-name { font-size: 12px; color: var(--text-secondary); }
+
+/* section */
+.section { margin-bottom: 28px; }
+
+/* nearby cards */
+.nearby-list { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
+.nearby-card {
+  display: flex; align-items: center;
+  background: var(--card-bg); backdrop-filter: blur(8px);
+  border-radius: var(--radius); padding: 16px 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255,255,255,0.6);
+  cursor: pointer; transition: transform 0.2s;
+}
+.nearby-card:active { transform: scale(0.98); }
+.nearby-img {
+  width: 56px; height: 56px; border-radius: 12px;
+  background: var(--sage-light); margin-right: 14px;
+  flex-shrink: 0; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+}
+.nearby-info { flex: 1; }
+.nearby-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.nearby-meta { font-size: 12px; color: var(--text-secondary); display: flex; gap: 8px; }
+.nearby-dist {
+  font-size: 13px; color: var(--rose); font-weight: 600;
+}
+
+/* featured section - 赏樱精选 */
+.featured-scroll {
+  display: flex; gap: 14px; overflow-x: auto;
+  padding: 0 20px; scrollbar-width: none;
+}
+.featured-scroll::-webkit-scrollbar { display: none; }
+.featured-card {
+  min-width: 220px; border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow);
+  background: #fff; flex-shrink: 0;
+  cursor: pointer; transition: transform 0.2s;
+}
+.featured-card:active { transform: scale(0.97); }
+.featured-img {
+  height: 140px; background: var(--sage-light);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px; position: relative;
+}
+.featured-tag {
+  position: absolute; top: 10px; left: 10px;
+  background: var(--rose); color: #fff;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 11px;
+}
+.featured-body { padding: 12px 14px; }
+.featured-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.featured-desc { font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.featured-meta { display: flex; gap: 10px; margin-top: 6px; font-size: 11px; color: var(--text-secondary); }
+
+/* bottom nav */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 430px;
+  background: rgba(253,248,244,0.92);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(196,129,122,0.12);
+  display: flex; padding: 8px 0 20px;
+}
+.nav-item { flex: 1; text-align: center; font-size: 11px; color: var(--text-secondary); }
+.nav-item.active { color: var(--rose); }
+.nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
+
+/* floating petal decoration */
+.petal {
+  position: fixed; pointer-events: none; opacity: 0.15;
+  font-size: 24px; animation: float 6s ease-in-out infinite;
+}
+.petal:nth-child(1) { top: 15%; right: 10%; animation-delay: 0s; }
+.petal:nth-child(2) { top: 45%; right: 5%; animation-delay: 2s; font-size: 18px; opacity: 0.1; }
+.petal:nth-child(3) { top: 70%; left: 8%; animation-delay: 4s; font-size: 20px; }
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(8deg); }
+}
+
+.spacer { height: 80px; }
+</style>
+</head>
+<body>
+
+<div class="petal">🌸</div>
+<div class="petal">🌸</div>
+<div class="petal">🌸</div>
+
+<div class="status-bar">
+  <span>9:41</span>
+  <span>📶 🔋</span>
+</div>
+
+<div class="header">
+  <div>
+    <h1>花<span>期</span></h1>
+    <div class="header-sub">按季节主题，发现好去处</div>
+  </div>
+</div>
+
+<div class="search-bar">
+  <span class="search-icon">🔍</span>
+  <input type="text" placeholder="想去哪？输入目的地或主题…" readonly>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <h2>🌸 当季热门</h2>
+    <a href="#">查看全部 →</a>
+  </div>
+  <div class="theme-scroll">
+    <div class="theme-item"><span class="theme-icon">🌸</span><span class="theme-name">赏樱</span></div>
+    <div class="theme-item"><span class="theme-icon">🏔️</span><span class="theme-name">雪山</span></div>
+    <div class="theme-item"><span class="theme-icon">🏖️</span><span class="theme-name">海岛</span></div>
+    <div class="theme-item"><span class="theme-icon">🍁</span><span class="theme-name">红叶</span></div>
+    <div class="theme-item"><span class="theme-icon">🦀</span><span class="theme-name">赶海</span></div>
+    <div class="theme-item"><span class="theme-icon">🏯</span><span class="theme-name">古镇</span></div>
+    <div class="theme-item"><span class="theme-icon">⛺</span><span class="theme-name">露营</span></div>
+    <div class="theme-item"><span class="theme-icon">♨️</span><span class="theme-name">温泉</span></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <h2>📍 离你最近</h2>
+  </div>
+  <div class="nearby-list">
+    <div class="nearby-card">
+      <div class="nearby-img">🌸</div>
+      <div class="nearby-info">
+        <div class="nearby-name">武汉大学 · 樱花大道</div>
+        <div class="nearby-meta">⭐ 4.7 · 3月最佳 · 1日游</div>
+      </div>
+      <div class="nearby-dist">3.2km</div>
+    </div>
+    <div class="nearby-card">
+      <div class="nearby-img">🌲</div>
+      <div class="nearby-info">
+        <div class="nearby-name">东湖绿道 · 骑行赏花</div>
+        <div class="nearby-meta">⭐ 4.5 · 全年 · 半日游</div>
+      </div>
+      <div class="nearby-dist">5.8km</div>
+    </div>
+    <div class="nearby-card">
+      <div class="nearby-img">🏠</div>
+      <div class="nearby-info">
+        <div class="nearby-name">昙华林 · 文艺街区</div>
+        <div class="nearby-meta">⭐ 4.3 · 全年 · 半日游</div>
+      </div>
+      <div class="nearby-dist">7.1km</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <h2>🌿 赏樱精选</h2>
+    <a href="#">更多 →</a>
+  </div>
+  <div class="featured-scroll">
+    <div class="featured-card">
+      <div class="featured-img">
+        🌸<span class="featured-tag">人气TOP</span>
+      </div>
+      <div class="featured-body">
+        <div class="featured-title">鼋头渚</div>
+        <div class="featured-desc">太湖绝佳处，三万株樱花盛放</div>
+        <div class="featured-meta"><span>⭐ 4.6</span><span>无锡</span><span>2日游</span></div>
+      </div>
+    </div>
+    <div class="featured-card">
+      <div class="featured-img">
+        🌸<span class="featured-tag">免门票</span>
+      </div>
+      <div class="featured-body">
+        <div class="featured-title">武汉大学</div>
+        <div class="featured-desc">百年学府樱花大道</div>
+        <div class="featured-meta"><span>⭐ 4.7</span><span>武汉</span><span>1日游</span></div>
+      </div>
+    </div>
+    <div class="featured-card">
+      <div class="featured-img">
+        🌸<span class="featured-tag">江南</span>
+      </div>
+      <div class="featured-body">
+        <div class="featured-title">杭州西湖</div>
+        <div class="featured-desc">苏堤春晓，樱花烂漫</div>
+        <div class="featured-meta"><span>⭐ 4.8</span><span>杭州</span><span>1日游</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="spacer"></div>
+
+<div class="bottom-nav">
+  <div class="nav-item active"><span class="nav-icon">🌱</span>发现</div>
+  <div class="nav-item"><span class="nav-icon">🔖</span>收藏</div>
+  <div class="nav-item"><span class="nav-icon">👤</span>我的</div>
+</div>
+
+</body>
+</html>

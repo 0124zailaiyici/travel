@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>花期 · 搜索结果</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --rose:#B36A5E;
+  --rose-light:#D4A69E;
+  --sage:#7A9A7A;
+  --amber:#D4A56A;
+  --ivory:#FAF6F2;
+  --charcoal:#2A2422;
+  --gray:#8A7E7A;
+  --card:rgba(255,255,255,0.92);
+  --shadow:0 4px 24px rgba(179,106,94,0.08);
+  --radius:18px;
+  --radius-sm:12px;
+}
+body{
+  font-family:'Noto Serif SC','PingFang SC',system-ui,serif;
+  background:var(--ivory);color:var(--charcoal);
+  max-width:430px;margin:0 auto;min-height:100vh;
+}
+
+/* search top */
+.st{display:flex;gap:12px;align-items:center;padding:14px 20px;border-bottom:1px solid rgba(179,106,94,.06)}
+.st-back{font-size:28px;color:var(--charcoal);cursor:pointer;line-height:1;text-decoration:none}
+.st-in{flex:1;padding:12px 18px;border:none;border-radius:40px;background:var(--card);font-size:15px;outline:none;font-family:inherit;box-shadow:0 2px 8px rgba(179,106,94,.04)}
+.st-in::placeholder{color:var(--gray)}
+
+/* filters */
+.fl{display:flex;gap:8px;padding:14px 20px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid rgba(179,106,94,.04)}
+.fl::-webkit-scrollbar{display:none}
+.fp{padding:6px 20px;border-radius:30px;font-size:13px;white-space:nowrap;background:var(--card);color:var(--gray);cursor:pointer;flex-shrink:0;transition:all .2s;border:1px solid transparent}
+.fp.act{background:var(--rose);color:#fff}
+.fp:hover:not(.act){border-color:var(--rose-light)}
+
+/* count */
+.ct{padding:10px 24px 4px;font-size:13px;color:var(--gray)}
+.ct span{color:var(--rose);font-weight:600}
+
+/* cards */
+.list{padding:12px 16px 120px;display:flex;flex-direction:column;gap:14px}
+.card{display:flex;background:var(--card);border-radius:var(--radius);overflow:hidden;
+  box-shadow:var(--shadow);cursor:pointer;transition:transform .2s}
+.card:active{transform:scale(0.98)}
+.card-img{width:140px;min-height:140px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:36px;position:relative}
+.card-bg{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.25);color:#fff;
+  padding:2px 10px;border-radius:12px;font-size:11px;backdrop-filter:blur(4px)}
+.card-body{padding:12px 16px;flex:1;display:flex;flex-direction:column}
+.card-tt{font-size:16px;font-weight:600;margin-bottom:4px}
+.card-d{font-size:12px;color:var(--gray);overflow:hidden;text-overflow:ellipsis;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.5;flex:1}
+.card-m{display:flex;gap:10px;margin-top:6px;font-size:12px}
+.card-s{color:#D4A56A}
+.card-ds{color:var(--rose);font-weight:600}
+.card-tags{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.tag{padding:2px 10px;border-radius:10px;font-size:10px;background:rgba(179,106,94,.08);color:var(--rose)}
+
+/* animations */
+.card{animation:fadeUp .4s both}
+.card:nth-child(1){animation-delay:0s}
+.card:nth-child(2){animation-delay:.06s}
+.card:nth-child(3){animation-delay:.12s}
+.card:nth-child(4){animation-delay:.18s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div class="st">
+  <a class="st-back" href="#">‹</a>
+  <input class="st-in" type="text" value="樱花" placeholder="搜索目的地…">
+</div>
+
+<div class="fl">
+  <span class="fp act">最近</span>
+  <span class="fp">评分</span>
+  <span class="fp">🌸 赏樱</span>
+  <span class="fp">🏔️ 雪山</span>
+  <span class="fp">🏖️ 海岛</span>
+  <span class="fp">🏯 古镇</span>
+</div>
+
+<div class="ct">共 <span>12</span> 个结果</div>
+
+<div class="list">
+  <div class="card">
+    <div class="card-img" style="background:linear-gradient(135deg,#D4A69E,#B36A5E)">
+      🌸<span class="card-bg">8km</span>
+    </div>
+    <div class="card-body">
+      <div class="card-tt">武汉大学 · 樱花大道</div>
+      <div class="card-d">百年学府樱花大道，全国最负盛名的赏樱地之一，三月中旬进入盛花期。需提前预约。</div>
+      <div class="card-m"><span class="card-s">⭐ 4.7</span><span>1日游</span><span class="card-ds">8km</span></div>
+      <div class="card-tags"><span class="tag">赏樱</span><span class="tag">免费</span><span class="tag">武汉</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-img" style="background:linear-gradient(135deg,#B36A5E,#8A4E44)">
+      🌸<span class="card-bg">26km</span>
+    </div>
+    <div class="card-body">
+      <div class="card-tt">东湖磨山樱花园</div>
+      <div class="card-d">世界三大樱花之都之一，万株樱花与东湖碧波相映成趣。</div>
+      <div class="card-m"><span class="card-s">⭐ 4.5</span><span>1日游</span><span class="card-ds">26km</span></div>
+      <div class="card-tags"><span class="tag">赏樱</span><span class="tag">东湖</span><span class="tag">花海</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-img" style="background:linear-gradient(135deg,#A8C4A8,#7A9A7A)">
+      🌸<span class="card-bg">120km</span>
+    </div>
+    <div class="card-body">
+      <div class="card-tt">鼋头渚</div>
+      <div class="card-d">太湖绝佳处，三万株樱花盛放的江南仙境，无锡必去赏樱地。</div>
+      <div class="card-m"><span class="card-s">⭐ 4.6</span><span>2日游</span><span class="card-ds">120km</span></div>
+      <div class="card-tags"><span class="tag">赏樱</span><span class="tag">太湖</span><span class="tag">无锡</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-img" style="background:linear-gradient(135deg,#D4A56A,#B36A5E)">
+      🌸<span class="card-bg">350km</span>
+    </div>
+    <div class="card-body">
+      <div class="card-tt">杭州西湖</div>
+      <div class="card-d">苏堤春晓，樱花烂漫，欲把西湖比西子，淡妆浓抹总相宜。</div>
+      <div class="card-m"><span class="card-s">⭐ 4.8</span><span>1日游</span><span class="card-ds">350km</span></div>
+      <div class="card-tags"><span class="tag">赏樱</span><span class="tag">西湖</span><span class="tag">杭州</span></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

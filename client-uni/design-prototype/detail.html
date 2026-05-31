@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>花期 - 目的地详情</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --rose: #C4817A;
+  --rose-light: #E8B4AE;
+  --sage: #5B7B5A;
+  --cream: #FDF8F4;
+  --text: #2C2422;
+  --text-secondary: #8A7A76;
+  --card-bg: rgba(255,255,255,0.88);
+  --shadow: 0 4px 20px rgba(196,129,122,0.10);
+  --radius: 18px;
+}
+body {
+  font-family: -apple-system, 'Noto Serif SC', 'PingFang SC', serif;
+  background: var(--cream); color: var(--text);
+  max-width: 430px; margin: 0 auto; min-height: 100vh;
+}
+
+/* hero */
+.hero {
+  position: relative; height: 380px;
+  background: linear-gradient(135deg, #E8B4AE, #C4817A, #9A5E58);
+  display: flex; align-items: flex-end; justify-content: center;
+  overflow: hidden;
+}
+.hero::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+  height: 120px;
+  background: linear-gradient(transparent, var(--cream));
+}
+.hero-emoji { font-size: 80px; margin-bottom: 60px; }
+.back-btn {
+  position: absolute; top: 50px; left: 16px;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: #fff; text-decoration: none;
+  z-index: 2;
+}
+
+/* info card */
+.info-card {
+  margin: -30px 16px 0; position: relative; z-index: 2;
+  background: var(--card-bg); backdrop-filter: blur(12px);
+  border-radius: var(--radius); padding: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255,255,255,0.5);
+}
+.info-name { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.info-stats { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--text-secondary); }
+.info-stats span { display: flex; align-items: center; gap: 4px; }
+.info-desc {
+  font-size: 13px; color: var(--text-secondary);
+  margin-top: 12px; line-height: 1.6;
+}
+.info-tags { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.info-tags .tag {
+  padding: 4px 12px; border-radius: 12px;
+  font-size: 11px; background: rgba(196,129,122,0.08); color: var(--rose);
+}
+
+/* section */
+.section {
+  margin: 16px; padding: 20px;
+  background: var(--card-bg); backdrop-filter: blur(8px);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255,255,255,0.5);
+}
+.section-title {
+  font-size: 17px; font-weight: 600; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* itinerary */
+.day-card {
+  margin-bottom: 14px; padding: 14px;
+  background: rgba(196,129,122,0.04);
+  border-radius: 12px;
+  border-left: 3px solid var(--rose);
+}
+.day-title { font-size: 14px; font-weight: 600; color: var(--rose); margin-bottom: 10px; }
+.time-slot { display: flex; gap: 8px; margin: 6px 0; font-size: 13px; line-height: 1.6; }
+.slot-label {
+  width: 44px; flex-shrink: 0; color: var(--text-secondary);
+  font-size: 12px; font-weight: 600;
+}
+.time-slot span:last-child { color: var(--text); }
+
+/* tips */
+.tip-item {
+  display: flex; gap: 8px; padding: 8px 0;
+  font-size: 13px; color: var(--text-secondary);
+  border-bottom: 1px solid rgba(196,129,122,0.06);
+}
+.tip-item:last-child { border-bottom: none; }
+.tip-num {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: rgba(232,196,160,0.3); color: var(--rose);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; flex-shrink: 0; margin-top: 1px;
+}
+
+/* budget */
+.budget-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.budget-item {
+  padding: 14px; text-align: center;
+  background: rgba(196,129,122,0.04);
+  border-radius: 12px;
+}
+.budget-label { font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px; }
+.budget-val { font-size: 18px; font-weight: 700; color: var(--rose); }
+
+/* transport */
+.transport-box {
+  background: rgba(91,123,90,0.06);
+  border-radius: 12px; padding: 14px;
+  font-size: 13px; color: var(--text-secondary); line-height: 1.6;
+}
+
+/* action button */
+.action-bar {
+  padding: 12px 16px 28px;
+}
+.nav-btn {
+  width: 100%; padding: 16px;
+  background: linear-gradient(135deg, var(--rose), var(--rose-dark, #9A5E58));
+  color: #fff; border: none; border-radius: 50px;
+  font-size: 17px; font-weight: 600;
+  cursor: pointer; transition: transform 0.2s;
+  font-family: inherit;
+  box-shadow: 0 4px 16px rgba(196,129,122,0.3);
+}
+.nav-btn:active { transform: scale(0.97); }
+
+:root { --rose-dark: #9A5E58; }
+
+.spacer { height: 20px; }
+</style>
+</head>
+<body>
+
+<a class="back-btn" href="#">←</a>
+
+<div class="hero">
+  <span class="hero-emoji">🌸</span>
+</div>
+
+<div class="info-card">
+  <div class="info-name">武汉大学 · 樱花大道</div>
+  <div class="info-stats">
+    <span>⭐ 4.7</span>
+    <span>📍 3.2km</span>
+    <span>📅 3月中旬</span>
+    <span>⏱ 1日游</span>
+  </div>
+  <div class="info-desc">
+    百年学府樱花大道，全国最负盛名的赏樱地之一。樱花季期间校园开放预约参观，百年建筑与烂漫樱花相映成趣。
+  </div>
+  <div class="info-tags">
+    <span class="tag">#赏樱</span>
+    <span class="tag">#免费</span>
+    <span class="tag">#武汉</span>
+    <span class="tag">#1日游</span>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">📋 行程安排</div>
+  <div class="day-card">
+    <div class="day-title">Day 1 — 经典樱花一日游</div>
+    <div class="time-slot"><span class="slot-label">上午</span><span>武汉大学樱花大道 → 老斋舍 → 樱花城堡。建议8:00前抵达避开人流，从正门进沿樱花大道一路向上</span></div>
+    <div class="time-slot"><span class="slot-label">下午</span><span>东湖绿道骑行 → 磨山樱花园。中午在广八路吃热干面，下午沿东湖绿道骑行至磨山</span></div>
+    <div class="time-slot"><span class="slot-label">晚上</span><span>楚河汉街晚餐 → 夜游东湖。推荐楚河汉街的亢龙太子酒轩，武昌鱼+排骨藕汤</span></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">⚠️ 避坑建议</div>
+  <div class="tip-item">
+    <span class="tip-num">1</span>
+    <span>樱花季（3月中-4月初）需提前3天在「武汉大学」公众号预约，名额有限</span>
+  </div>
+  <div class="tip-item">
+    <span class="tip-num">2</span>
+    <span>周末人流量极大，建议工作日前往，或者早8点前到</span>
+  </div>
+  <div class="tip-item">
+    <span class="tip-num">3</span>
+    <span>周边住宿溢价严重，建议住街道口/广埠屯地铁站附近，性价比更高</span>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">💰 预算参考</div>
+  <div class="budget-grid">
+    <div class="budget-item">
+      <span class="budget-label">交通</span>
+      <span class="budget-val">¥50</span>
+    </div>
+    <div class="budget-item">
+      <span class="budget-label">餐饮</span>
+      <span class="budget-val">¥80</span>
+    </div>
+    <div class="budget-item">
+      <span class="budget-label">门票</span>
+      <span class="budget-val">免费</span>
+    </div>
+    <div class="budget-item">
+      <span class="budget-label">合计</span>
+      <span class="budget-val" style="color:var(--text);">¥130</span>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">🚗 交通指南</div>
+  <div class="transport-box">
+    地铁2号线街道口站C出口步行15分钟，或乘公交413/591到珞珈山路站。自驾可停武大正门停车场（车位紧张，建议公共交通）。
+  </div>
+</div>
+
+<div class="action-bar">
+  <button class="nav-btn">📍 导航去这里</button>
+</div>
+
+<div class="spacer"></div>
+
+</body>
+</html>

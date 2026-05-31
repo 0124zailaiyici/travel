@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>花期 · 首页</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --rose:#B36A5E;
+  --rose-light:#D4A69E;
+  --sage:#7A9A7A;
+  --sage-light:#A8C4A8;
+  --amber:#D4A56A;
+  --ivory:#FAF6F2;
+  --ivory-dark:#F0EAE4;
+  --charcoal:#2A2422;
+  --gray:#8A7E7A;
+  --gray-light:#B8AEAA;
+  --card:rgba(255,255,255,0.92);
+  --shadow:0 4px 24px rgba(179,106,94,0.08);
+  --shadow-lg:0 8px 40px rgba(179,106,94,0.12);
+  --radius:20px;
+  --radius-sm:12px;
+}
+body{
+  font-family:'Noto Serif SC','PingFang SC',system-ui,serif;
+  background:var(--ivory);
+  color:var(--charcoal);
+  max-width:430px;margin:0 auto;min-height:100vh;
+  position:relative;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* decorative bg */
+body::before{
+  content:'';position:fixed;top:-160px;right:-80px;
+  width:400px;height:400px;
+  background:radial-gradient(circle,rgba(179,106,94,0.06) 0%,transparent 60%);
+  border-radius:50%;pointer-events:none;
+}
+body::after{
+  content:'';position:fixed;bottom:-120px;left:-60px;
+  width:300px;height:300px;
+  background:radial-gradient(circle,rgba(212,165,106,0.08) 0%,transparent 60%);
+  border-radius:50%;pointer-events:none;
+}
+
+/* screen */
+.screen{padding:0 0 32px;position:relative;z-index:1}
+
+/* header */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 4px}
+.hdr-l{display:flex;align-items:center;gap:10px}
+.hdr-icon{font-size:34px}
+.hdr-t{font-size:28px;font-weight:700;letter-spacing:1px;line-height:1.2}
+.hdr-t .ac{color:var(--rose)}
+.hdr-sub{font-size:12px;color:var(--gray);margin-top:1px;letter-spacing:0.5px}
+
+/* search */
+.sb{margin:16px 20px 28px;display:flex;align-items:center;gap:12px;
+  background:var(--card);border-radius:50px;padding:14px 20px;
+  box-shadow:var(--shadow);cursor:pointer;transition:transform .2s}
+.sb:active{transform:scale(0.98)}
+.sb-ico{font-size:18px;opacity:.5}
+.sb-t{font-size:15px;color:var(--gray);letter-spacing:0.3px}
+
+/* section */
+.sec{margin-bottom:32px}
+.sec-hd{display:flex;justify-content:space-between;align-items:baseline;padding:0 24px;margin-bottom:14px}
+.sec-tt{font-size:18px;font-weight:600;color:var(--charcoal)}
+.sec-mo{font-size:13px;color:var(--rose);cursor:pointer;transition:opacity .2s}
+.sec-mo:hover{opacity:.7}
+
+/* theme pills */
+.t-scroll{display:flex;gap:10px;padding:0 20px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.t-scroll::-webkit-scrollbar{display:none}
+.tp{display:flex;align-items:center;gap:8px;padding:10px 20px;
+  background:var(--card);border-radius:50px;flex-shrink:0;
+  box-shadow:0 2px 12px rgba(179,106,94,0.05);
+  cursor:pointer;transition:transform .2s,box-shadow .2s;animation:fadeUp .5s both}
+.tp:nth-child(1){animation-delay:0s}
+.tp:nth-child(2){animation-delay:.05s}
+.tp:nth-child(3){animation-delay:.1s}
+.tp:nth-child(4){animation-delay:.15s}
+.tp:nth-child(5){animation-delay:.2s}
+.tp:nth-child(6){animation-delay:.25s}
+.tp:nth-child(7){animation-delay:.3s}
+.tp:nth-child(8){animation-delay:.35s}
+.tp:active{transform:scale(0.95)}
+.tp-ico{font-size:22px}
+.tp-t{font-size:14px;color:var(--charcoal);font-weight:500}
+
+/* season card */
+.s-list{padding:0 20px;display:flex;gap:14px;overflow-x:auto;scrollbar-width:none}
+.s-list::-webkit-scrollbar{display:none}
+.sc{flex-shrink:0;width:260px;background:var(--card);border-radius:var(--radius);overflow:hidden;
+  box-shadow:var(--shadow);cursor:pointer;transition:transform .2s;animation:fadeUp .5s both}
+.sc:active{transform:scale(0.97)}
+.sc-img{height:160px;background:var(--sage-light);display:flex;align-items:center;justify-content:center;font-size:48px;position:relative}
+.sc-bg{position:absolute;top:10px;left:10px;background:var(--rose);color:#fff;padding:2px 12px;border-radius:20px;font-size:11px}
+.sc-body{padding:14px 16px}
+.sc-n{font-size:16px;font-weight:600;margin-bottom:4px}
+.sc-d{font-size:12px;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc-m{display:flex;gap:12px;margin-top:6px;font-size:12px;color:var(--gray)}
+
+/* nearby */
+.nb-list{padding:0 20px;display:flex;flex-direction:column;gap:12px}
+.nb{display:flex;background:var(--card);border-radius:var(--radius);overflow:hidden;
+  box-shadow:var(--shadow);cursor:pointer;transition:transform .2s;animation:fadeUp .5s both}
+.nb:active{transform:scale(0.98)}
+.nb:nth-child(1){animation-delay:0s}
+.nb:nth-child(2){animation-delay:.08s}
+.nb:nth-child(3){animation-delay:.16s}
+.nb-img{width:100px;height:100px;flex-shrink:0;background:var(--sage-light);display:flex;align-items:center;justify-content:center;font-size:32px}
+.nb-body{flex:1;padding:14px 16px;display:flex;flex-direction:column;justify-content:center}
+.nb-n{font-size:15px;font-weight:600;color:var(--charcoal)}
+.nb-m{font-size:12px;color:var(--gray);margin:4px 0}
+.nb-f{display:flex;justify-content:space-between;align-items:center}
+.nb-s{font-size:12px;color:#D4A56A}
+.nb-d{font-size:13px;color:var(--rose);font-weight:600}
+
+/* bottom nav */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:430px;
+  background:rgba(250,246,242,.95);backdrop-filter:blur(20px);
+  border-top:1px solid rgba(179,106,94,.08);
+  display:flex;padding:8px 0 24px}
+.bni{flex:1;text-align:center;font-size:11px;color:var(--gray)}
+.bni.act{color:var(--rose)}
+.bni-ico{font-size:20px;display:block;margin-bottom:2px}
+
+.anim{animation:fadeUp .5s both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.spacer{height:80px}
+</style>
+</head>
+<body>
+
+<div class="screen">
+  <!-- header -->
+  <div class="hdr">
+    <div class="hdr-l">
+      <div class="hdr-icon">🌸</div>
+      <div>
+        <div class="hdr-t">花<span class="ac">期</span></div>
+        <div class="hdr-sub">发现四季好去处</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- search -->
+  <div class="sb">
+    <span class="sb-ico">🔍</span>
+    <span class="sb-t">想去哪？搜索目的地或主题…</span>
+  </div>
+
+  <!-- themes -->
+  <div class="sec">
+    <div class="sec-hd">
+      <span class="sec-tt">🌸 当季热门</span>
+      <span class="sec-mo">查看全部 →</span>
+    </div>
+    <div class="t-scroll">
+      <div class="tp"><span class="tp-ico">🌸</span><span class="tp-t">赏樱</span></div>
+      <div class="tp"><span class="tp-ico">🏔️</span><span class="tp-t">雪山</span></div>
+      <div class="tp"><span class="tp-ico">🏖️</span><span class="tp-t">海岛</span></div>
+      <div class="tp"><span class="tp-ico">🍁</span><span class="tp-t">红叶</span></div>
+      <div class="tp"><span class="tp-ico">🦀</span><span class="tp-t">赶海</span></div>
+      <div class="tp"><span class="tp-ico">🏯</span><span class="tp-t">古镇</span></div>
+      <div class="tp"><span class="tp-ico">⛺</span><span class="tp-t">露营</span></div>
+      <div class="tp"><span class="tp-ico">♨️</span><span class="tp-t">温泉</span></div>
+    </div>
+  </div>
+
+  <!-- 5月推荐 -->
+  <div class="sec">
+    <div class="sec-hd">
+      <span class="sec-tt">📅 五月推荐</span>
+      <span class="sec-mo">更多 →</span>
+    </div>
+    <div class="s-list">
+      <div class="sc">
+        <div class="sc-img">🏖️<span class="sc-bg">最佳季节</span></div>
+        <div class="sc-body">
+          <div class="sc-n">三亚亚龙湾</div>
+          <div class="sc-d">天下第一湾，7公里银白沙滩</div>
+          <div class="sc-m"><span>⭐ 4.8</span><span>10-4月</span><span>5日游</span></div>
+        </div>
+      </div>
+      <div class="sc">
+        <div class="sc-img" style="background:linear-gradient(135deg,#D4A69E,#B36A5E)">🏯</div>
+        <div class="sc-body">
+          <div class="sc-n">平遥古城</div>
+          <div class="sc-d">保存最完整的明清古城</div>
+          <div class="sc-m"><span>⭐ 4.5</span><span>全年</span><span>2日游</span></div>
+        </div>
+      </div>
+      <div class="sc">
+        <div class="sc-img" style="background:linear-gradient(135deg,#A8C4A8,#7A9A7A)">⛺</div>
+        <div class="sc-body">
+          <div class="sc-n">安吉露营</div>
+          <div class="sc-d">长三角最火露营目的地</div>
+          <div class="sc-m"><span>⭐ 4.4</span><span>5-10月</span><span>2日游</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- nearby -->
+  <div class="sec">
+    <div class="sec-hd">
+      <span class="sec-tt">📍 离你最近</span>
+    </div>
+    <div class="nb-list">
+      <div class="nb">
+        <div class="nb-img" style="background:linear-gradient(135deg,#D4A69E,#B36A5E)">🌸</div>
+        <div class="nb-body">
+          <div class="nb-n">武汉大学 · 樱花大道</div>
+          <div class="nb-m">⭐ 4.7 · 3月最佳 · 1日游</div>
+          <div class="nb-f"><span class="nb-s">推荐</span><span class="nb-d">8km</span></div>
+        </div>
+      </div>
+      <div class="nb">
+        <div class="nb-img" style="background:linear-gradient(135deg,#A8C4A8,#7A9A7A)">🌲</div>
+        <div class="nb-body">
+          <div class="nb-n">东湖绿道</div>
+          <div class="nb-m">⭐ 4.5 · 全年 · 半日游</div>
+          <div class="nb-f"><span class="nb-s">骑行</span><span class="nb-d">12km</span></div>
+        </div>
+      </div>
+      <div class="nb">
+        <div class="nb-img" style="background:linear-gradient(135deg,#D4A56A,#B36A5E)">🏠</div>
+        <div class="nb-body">
+          <div class="nb-n">昙华林 · 文艺街区</div>
+          <div class="nb-m">⭐ 4.3 · 全年 · 半日游</div>
+          <div class="nb-f"><span class="nb-s">拍照</span><span class="nb-d">15km</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="spacer"></div>
+</div>
+
+<!-- bottom nav -->
+<div class="bnav">
+  <div class="bni act"><span class="bni-ico">🌱</span>发现</div>
+  <div class="bni"><span class="bni-ico">🔖</span>收藏</div>
+  <div class="bni"><span class="bni-ico">👤</span>我的</div>
+</div>
+
+</body>
+</html>
