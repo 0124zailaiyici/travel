@@ -175,8 +175,13 @@ router.get('/:id', async (req, res) => {
   const tags = Array.isArray(dest.tags) ? dest.tags : JSON.parse(dest.tags || '[]')
   const tips = db.prepare('SELECT content FROM tips WHERE destination_id = ? ORDER BY sort_order').all(dest.id)
   const budgets = db.prepare('SELECT category, amount FROM budgets WHERE destination_id = ?').all(dest.id)
-  const budget = {}
-  for (const b of budgets) budget[b.category] = b.amount
+  let budget = {}
+  const detail = budgets.find(b => b.category === '_detail')
+  if (detail) {
+    try { budget = JSON.parse(detail.amount) } catch(e) { budget = {} }
+  } else {
+    for (const b of budgets) budget[b.category] = b.amount
+  }
   const themes = dest.id?.startsWith('d') ? db.prepare('SELECT t.*, t.id as tid FROM themes t JOIN destination_themes dt ON t.id = dt.theme_id WHERE dt.destination_id = ?').all(dest.id) : []
   const ulat = parseFloat(lat), ulng = parseFloat(lng)
   const distance = !isNaN(ulat) && !isNaN(ulng) ? calculateDistance(ulat, ulng, dest.lat, dest.lng) : null

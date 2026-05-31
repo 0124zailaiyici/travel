@@ -23,7 +23,12 @@ export async function generateItinerary(destination) {
    - evening: 同上，含具体餐厅推荐和招牌菜
    - meals: 当天推荐美食（具体店名+必点菜）
 2. "tips" — 至少8条避坑/实用建议，如：最佳拍照点、排队策略、省钱技巧、天气应对、周边彩蛋
-3. "budget" — 包含 transport/accommodation/food/tickets/other，数值单位元
+3. "budget" — 预算明细，每个分类含total和items数组，示例：
+   "transport": {"total": 200, "items": [{"name":"高铁往返","cost":150},{"name":"市内公交","cost":50}]}
+   "accommodation": {"total": 400, "items": [{"name":"民宿两晚","cost":400}]}
+   "food": {"total": 250, "items": [{"name":"正餐","cost":180},{"name":"小吃","cost":70}]}
+   "tickets": {"total": 100, "items": [{"name":"景区门票","cost":100}]}
+   分类：transport/accommodation/food/tickets/other，每个分类都要有total和items
 
 写作风格：像朋友安利一样真实具体，避免套话。每段至少50字，包含具体地名、店名、价格参考。`
 

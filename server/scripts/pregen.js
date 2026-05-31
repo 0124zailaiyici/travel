@@ -60,11 +60,18 @@ for (const dest of destinations) {
     // save budget
     if (gen.budget) {
       db.prepare('DELETE FROM budgets WHERE destination_id = ?').run(dest.id)
-      const insertBudget = db.prepare(
-        'INSERT INTO budgets (id, destination_id, category, amount) VALUES (?, ?, ?, ?)'
-      )
-      for (const [cat, amt] of Object.entries(gen.budget)) {
-        insertBudget.run(uuid(), dest.id, cat, amt)
+      // check if new format (with items array)
+      const first = Object.values(gen.budget)[0]
+      if (first && typeof first === 'object' && first.items) {
+        db.prepare('INSERT INTO budgets (id, destination_id, category, amount) VALUES (?, ?, ?, ?)')
+          .run(uuid(), dest.id, '_detail', JSON.stringify(gen.budget))
+      } else {
+        const insertBudget = db.prepare(
+          'INSERT INTO budgets (id, destination_id, category, amount) VALUES (?, ?, ?, ?)'
+        )
+        for (const [cat, amt] of Object.entries(gen.budget)) {
+          insertBudget.run(uuid(), dest.id, cat, amt)
+        }
       }
     }
 

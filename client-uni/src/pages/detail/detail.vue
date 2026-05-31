@@ -63,11 +63,16 @@
         </view>
 
         <view class="sec" v-if="detail.budget && Object.keys(detail.budget).length">
-          <text class="sec-tt">💰 预算</text>
-          <view class="bg-grid">
-            <view class="bg-i" v-for="(val, key) in detail.budget" :key="key">
-              <text class="bg-l">{{ labels[key] || key }}</text>
-              <text class="bg-v">{{ val ? '¥' + val : '免费' }}</text>
+          <text class="sec-tt">💰 预算明细</text>
+          <view class="bg-list">
+            <view class="bg-cat" v-for="(val, key) in detail.budget" :key="key">
+              <view class="bg-hd">
+                <text class="bg-l">{{ labels[key] || key }}</text>
+                <text class="bg-v">{{ typeof val === 'object' ? '¥' + (val.total || 0) : (val ? '¥' + val : '免费') }}</text>
+              </view>
+              <view class="bg-items" v-if="typeof val === 'object' && val.items">
+                <text class="bg-item" v-for="(item, ii) in val.items" :key="ii">· {{ item.name }} ¥{{ item.cost }}</text>
+              </view>
             </view>
           </view>
         </view>
@@ -183,10 +188,13 @@ function navigate() {
 .tip-n { width: 32rpx; height: 32rpx; border-radius: 50%; flex-shrink: 0; background: rgba(232,196,160,0.3); color: #C4817A; display: flex; align-items: center; justify-content: center; font-size: 18rpx; margin-top: 2rpx; }
 .tip-t { font-size: 22rpx; color: #8A7A76; line-height: 1.6; flex: 1; }
 
-.bg-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12rpx; }
-.bg-i { padding: 16rpx; text-align: center; background: rgba(196,129,122,0.04); border-radius: 12rpx; }
-.bg-l { font-size: 20rpx; color: #8A7A76; display: block; margin-bottom: 4rpx; }
+.bg-list { display: flex; flex-direction: column; gap: 16rpx; }
+.bg-cat { background: rgba(196,129,122,0.03); border-radius: 12rpx; padding: 14rpx; }
+.bg-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6rpx; }
+.bg-l { font-size: 24rpx; color: #8A7A76; font-weight: 500; }
 .bg-v { font-size: 28rpx; font-weight: 700; color: #C4817A; }
+.bg-items { padding-left: 8rpx; }
+.bg-item { font-size: 22rpx; color: #5C4A46; display: block; margin: 4rpx 0; line-height: 1.5; }
 
 .tb { background: rgba(91,123,90,0.06); border-radius: 12rpx; padding: 16rpx; font-size: 22rpx; color: #8A7A76; line-height: 1.7; }
 
