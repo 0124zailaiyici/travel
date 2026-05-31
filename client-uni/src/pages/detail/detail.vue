@@ -33,15 +33,23 @@
         <view class="tag-row"><text class="t-tag" v-for="t in (detail.tags || [])" :key="t">{{ t }}</text></view>
 
         <view class="sec" v-if="detail.itinerary && detail.itinerary.length">
-          <text class="sec-tt">📋 行程</text>
+          <view class="sec-hd" @tap="toggleAllDays">
+            <text class="sec-tt">📋 行程</text>
+            <text class="sec-toggle">{{ allDaysExpanded ? '收起全部 ▲' : '展开全部 ▼' }}</text>
+          </view>
           <view class="day" v-for="(day, i) in detail.itinerary" :key="i">
-            <text class="day-tt">Day {{ i + 1 }} · {{ day.title }}</text>
-            <view class="ts" v-if="day.morning"><text class="tl ba">上午</text><text class="tx">{{ day.morning }}</text></view>
-            <view class="ts" v-if="day.afternoon"><text class="tl bp">下午</text><text class="tx">{{ day.afternoon }}</text></view>
-            <view class="ts" v-if="day.evening"><text class="tl be">晚上</text><text class="tx">{{ day.evening }}</text></view>
-            <view class="meals" v-if="mealsList(day.meals).length">
-              <text class="ml-tt">🍽️ 推荐美食</text>
-              <text class="ml-i" v-for="(m, mi) in mealsList(day.meals)" :key="mi">· {{ m }}</text>
+            <view class="day-hd" @tap="toggleDay(i)">
+              <text class="day-tt">Day {{ i + 1 }} · {{ day.title }}</text>
+              <text class="day-arrow">{{ expandedDays[i] ? '▲' : '▼' }}</text>
+            </view>
+            <view class="day-body" v-if="expandedDays[i]">
+              <view class="ts" v-if="day.morning"><text class="tl ba">上午</text><text class="tx">{{ day.morning }}</text></view>
+              <view class="ts" v-if="day.afternoon"><text class="tl bp">下午</text><text class="tx">{{ day.afternoon }}</text></view>
+              <view class="ts" v-if="day.evening"><text class="tl be">晚上</text><text class="tx">{{ day.evening }}</text></view>
+              <view class="meals" v-if="mealsList(day.meals).length">
+                <text class="ml-tt">🍽️ 推荐美食</text>
+                <text class="ml-i" v-for="(m, mi) in mealsList(day.meals)" :key="mi">· {{ m }}</text>
+              </view>
             </view>
           </view>
         </view>
@@ -76,12 +84,20 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { api } from '../../api/index.js'
 import { getLocation } from '../../api/location.js'
 
 const detail = ref({}); const isFav = ref(false); const imgErr = ref(false)
+const expandedDays = ref([])
+const allDaysExpanded = computed(() => expandedDays.value.every(v => v))
+
+function toggleDay(i) { expandedDays.value[i] = !expandedDays.value[i] }
+function toggleAllDays() {
+  const target = !allDaysExpanded.value
+  expandedDays.value = expandedDays.value.map(() => target)
+}
 const bg = ref('linear-gradient(135deg,#E8B4AE,#C4817A,#9A5E58)')
 const bgs = ['linear-gradient(135deg,#E8B4AE,#C4817A,#9A5E58)','linear-gradient(135deg,#8BA88A,#5B7B5A,#3D5A3C)','linear-gradient(135deg,#E8C4A0,#C4817A,#9A5E58)','linear-gradient(135deg,#C4817A,#5B7B5A,#3D5A3C)','linear-gradient(135deg,#F0D5C0,#E8B4AE,#C4817A)']
 const labels = { transport:'交通', accommodation:'住宿', food:'餐饮', tickets:'门票', other:'其他' }
@@ -98,6 +114,7 @@ onLoad(async (o) => {
   try {
     const loc = await getLocation(); const data = await api.getDetail(o.id, loc)
     detail.value = data; isFav.value = getF().includes(data.id)
+    expandedDays.value = data.itinerary?.map(() => true) || []
     bg.value = bgs[parseInt(o.id.replace('d','')) % bgs.length]
   } catch(e) { console.error(e); uni.showToast({ title:'加载失败', icon:'none' }) }
 })
@@ -140,7 +157,13 @@ function navigate() {
 .t-tag { padding: 4rpx 18rpx; border-radius: 20rpx; font-size: 20rpx; background: rgba(196,129,122,0.08); color: #C4817A; }
 
 .sec { margin: 20rpx 24rpx; padding: 24rpx; background: rgba(255,255,255,0.88); border-radius: 20rpx; box-shadow: 0 2rpx 14rpx rgba(196,129,122,0.04); }
-.sec-tt { font-size: 28rpx; font-weight: 600; color: #2C2422; margin-bottom: 16rpx; display: block; }
+.sec-tt { font-size: 28rpx; font-weight: 600; color: #2C2422; display: block; }
+.sec-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16rpx; cursor: pointer; }
+.sec-toggle { font-size: 22rpx; color: #C4817A; }
+
+.day-hd { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 10rpx; }
+.day-arrow { font-size: 20rpx; color: #C4817A; }
+.day-body { overflow: hidden; }
 
 .day { margin-bottom: 16rpx; padding: 16rpx; background: rgba(196,129,122,0.04); border-radius: 14rpx; border-left: 4rpx solid #C4817A; }
 .day-tt { font-size: 24rpx; font-weight: 600; color: #C4817A; margin-bottom: 10rpx; display: block; }

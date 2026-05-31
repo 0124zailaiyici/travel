@@ -14,7 +14,7 @@ let fail = 0
 
 for (const dest of destinations) {
   const existing = db.prepare('SELECT COUNT(*) as c FROM itineraries WHERE destination_id = ?').get(dest.id)
-  if (existing.c > 3) {
+  if (existing.c > 0) {
     console.log(`  [跳过] ${dest.name} — 已有行程`)
     continue
   }
