@@ -3,68 +3,61 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=375, initial-scale=1">
-<title>卡片布局 Debug v2</title>
+<title>卡片布局 Debug v3</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #FDF8F4; font-family: -apple-system, sans-serif; padding: 16px; }
-  
   .rs-card { display: flex; background: rgba(255,255,255,0.88); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 8px rgba(196,129,122,0.06); margin-bottom: 12px; }
   .rs-img { width: 100px; min-height: 100px; flex-shrink: 0; align-self: stretch; background: linear-gradient(135deg,#E8B4AE,#C4817A); display:flex; align-items:center; justify-content:center; font-size:24px; color:#fff; }
   .rs-body { flex: 1; padding: 10px 12px; display: flex; flex-direction: column; min-width: 0; }
-  .rs-top { display: flex; justify-content: space-between; align-items: baseline; overflow: hidden; min-width: 0; }
-  .rs-name-o { font-size: 14px; font-weight: 600; color: #2C2422; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
-  .rs-name { font-size: 14px; font-weight: 600; color: #2C2422; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 1; min-width: 0; }
-  .rs-dist { font-size: 11px; color: #C4817A; font-weight: 600; flex-shrink: 0; margin-left: 4px; }
-  .rs-desc { font-size: 11px; color: #8A7A76; line-height: 1.5; margin: 3px 0 2px; word-break: break-word; overflow-wrap: break-word; }
-  .rs-meta { display: flex; gap: 8px; font-size: 11px; color: #8A7A76; margin: 2px 0; }
-  .rs-star { color: #E8A838; }
-
+  .rs-top { display: flex; flex-direction: row; min-width: 0; }
+  .rs-name { font-size: 14px; font-weight: 600; color: #2C2422; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+  .rs-dist { font-size: 11px; color: #C4817A; font-weight: 600; flex-shrink: 0; margin-left: auto; padding-left: 4px; }
+  .rs-desc { font-size: 11px; color: #8A7A76; line-height: 1.5; margin: 3px 0 2px; word-break: break-all; overflow-wrap: break-word; }
   .label { font-size: 12px; color: #666; margin: 16px 0 6px; font-weight: 600; }
   .hint { font-size: 11px; color: #999; margin: 2px 0 8px; }
-  .bad { background: #ffcdd2 !important; }
-  .old-name { background: #FFE0B2; }
 </style>
 </head>
 <body>
 
-<div class="label">▶ 新版卡片（简介无高度限制，自动换行）</div>
+<div class="label">▶ 新版：简介 word-break:break-all 自动换行，名称 flex:1 收缩让距离可见</div>
 
-<!-- 长名称 + 短描述 -->
+<!-- 长名称+长距离 -->
 <div class="rs-card">
   <div class="rs-img">🌸</div>
   <div class="rs-body">
     <div class="rs-top">
-      <span class="rs-name">下黎里村少数民族特色村寨古城墙</span>
-      <span class="rs-dist">1185km</span>
+      <div class="rs-name">青秀山风景区中泰南宁孔敬友谊园</div>
+      <span class="rs-dist">1685km</span>
     </div>
-    <div class="rs-desc">古村落有百年历史，保存完好的明清建筑群</div>
-    <div class="rs-meta"><span class="rs-star">⭐ 4.5</span><span>1日游</span></div>
+    <div class="rs-desc">青秀山风景区内的一处中泰友谊主题园林，融合了泰国建筑风格与中国园林艺术</div>
+    <div style="font-size:11px;color:#e8a838;">⭐ 4.6</div>
   </div>
 </div>
 
-<!-- 短名称 + 长描述 -->
+<!-- 短名称+长描述 -->
 <div class="rs-card">
   <div class="rs-img">🌸</div>
   <div class="rs-body">
     <div class="rs-top">
-      <span class="rs-name">南宁人民公园九曲桥</span>
+      <div class="rs-name">南宁人民公园九曲桥</div>
       <span class="rs-dist">3km</span>
     </div>
     <div class="rs-desc">南宁人民公园九曲桥位于民生街道民生街道人民东路1号南宁市人民公园(西南角)，风景名胜;风景名胜;风景名胜</div>
-    <div class="rs-meta"><span class="rs-star">⭐ 4.2</span><span>1日游</span></div>
+    <div style="font-size:11px;color:#e8a838;">⭐ 4.2</div>
   </div>
 </div>
 
-<!-- 长名称 + 长描述 -->
+<!-- 正常 -->
 <div class="rs-card">
   <div class="rs-img">🌸</div>
   <div class="rs-body">
     <div class="rs-top">
-      <span class="rs-name">青秀山风景区中泰南宁孔敬友谊园</span>
-      <span class="rs-dist">1685km</span>
+      <div class="rs-name">青秀山</div>
+      <span class="rs-dist">2km</span>
     </div>
-    <div class="rs-desc">青秀山风景区内的一处中泰友谊主题园林，融合了泰国建筑风格与中国园林艺术，是中泰文化交流的见证</div>
-    <div class="rs-meta"><span class="rs-star">⭐ 4.6</span><span>1日游</span></div>
+    <div class="rs-desc">南宁市区内的5A级风景区，城市绿肺</div>
+    <div style="font-size:11px;color:#e8a838;">⭐ 4.8</div>
   </div>
 </div>
 
