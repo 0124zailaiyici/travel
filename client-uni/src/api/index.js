@@ -15,6 +15,7 @@ function request(url, data = {}) {
 export const api = {
   getHotThemes: () => request('/themes/hot'),
   getAllThemes: () => request('/themes/all'),
+  getSuggestions: (q) => request('/destinations/suggestions', { q }),
   searchDestinations: (q, city, loc) => request('/destinations/search', { q, city, lat: loc?.lat, lng: loc?.lng }),
   getNearby: (loc) => request('/destinations/nearby', { lat: loc?.lat, lng: loc?.lng }),
   getDetail: (id, loc) => request(`/destinations/${id}`, { lat: loc?.lat, lng: loc?.lng }),

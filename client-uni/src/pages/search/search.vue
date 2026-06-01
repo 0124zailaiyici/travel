@@ -2,7 +2,10 @@
   <view class="sp">
     <view class="sp-top">
       <text class="sp-back" @tap="goBack">‹</text>
-      <input class="sp-input" v-model="query" placeholder="搜索目的地…" @confirm="doSearch" confirm-type="search" />
+      <input class="sp-input" v-model="query" placeholder="搜索目的地…" @confirm="doSearch" confirm-type="search" @input="onInput" @blur="hideSuggest" />
+    </view>
+    <view class="sp-suggest" v-if="suggestions.length && showSuggest">
+      <view class="sg-item" v-for="s in suggestions" :key="s.id" @tap="pickSuggest(s)">{{ s.name }}</view>
     </view>
 
     <scroll-view class="sp-filter" scroll-x enhanced show-scrollbar="false">
@@ -52,9 +55,22 @@ import { getLocation } from '../../api/location.js'
 const query = ref(''); const list = ref([]); const loading = ref(false); const searched = ref(false); const activeFilter = ref('distance')
 const filters = [{ key:'distance', label:'最近' },{ key:'rating', label:'评分' },{ key:'赏樱', label:'🌸赏樱' },{ key:'雪山', label:'🏔️雪山' },{ key:'海岛', label:'🏖️海岛' },{ key:'古镇', label:'🏯古镇' }]
 
+const suggestions = ref([]); const showSuggest = ref(false); let suggestTimer = null
+
 onLoad((o) => { if (o.q) { query.value = o.q; doSearch() } })
+function onInput() {
+  clearTimeout(suggestTimer)
+  if (!query.value.trim()) { suggestions.value = []; showSuggest.value = false; return }
+  suggestTimer = setTimeout(async () => {
+    suggestions.value = await api.getSuggestions(query.value)
+    showSuggest.value = suggestions.value.length > 0
+  }, 150)
+}
+function pickSuggest(s) { query.value = s.name; showSuggest.value = false; doSearch() }
+function hideSuggest() { setTimeout(() => { showSuggest.value = false }, 200) }
+
 async function doSearch() {
-  if (!query.value.trim()) return; loading.value = true; searched.value = true
+  if (!query.value.trim()) return; loading.value = true; searched.value = true; showSuggest.value = false
   try { const loc = await getLocation(); list.value = await api.searchDestinations(query.value, '', loc) }
   catch(e) { console.error(e) }
   finally { loading.value = false }
@@ -102,6 +118,11 @@ function goBack() { uni.navigateBack() }
 .rs-star { color: #E8A838; }
 .rs-tags { display: flex; flex-wrap: wrap; gap: 6rpx; margin-top: 6rpx; }
 .rs-tag { padding: 4rpx 14rpx; border-radius: 14rpx; font-size: 20rpx; background: rgba(196,129,122,0.08); color: #C4817A; }
+
+.sp-suggest { margin: 0 24rpx; background: #fff; border-radius: 12rpx; box-shadow: 0 4rpx 20rpx rgba(44,36,34,0.08); position: relative; z-index: 10; }
+.sg-item { padding: 20rpx 24rpx; font-size: 26rpx; color: #2C2422; border-bottom: 1rpx solid #f5efeb; }
+.sg-item:last-child { border-bottom: none; }
+.sg-item:active { background: #f5efeb; }
 
 .sp-empty { text-align: center; padding: 120rpx 0; }
 .e-icon { font-size: 64rpx; display: block; margin-bottom: 16rpx; }

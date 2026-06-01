@@ -16,6 +16,12 @@
       <text class="s-text">想去哪？输入目的地或主题…</text>
     </view>
 
+    <view class="shimmer" v-if="!themes.length && !nearby.length && !inSeason.length">
+      <view class="sh-pills"><view class="sh-pill" v-for="i in 5" :key="i"></view></view>
+      <view class="sh-card-row"><view class="sh-hcard" v-for="i in 2" :key="i"><view class="sh-hbody"><view class="sh-l w70"></view><view class="sh-l w90"></view><view class="sh-l w50"></view></view><view class="sh-himg"></view></view></view>
+      <view class="sh-card-row"><view class="sh-hcard" v-for="i in 2" :key="i"><view class="sh-himg"></view><view class="sh-hbody"><view class="sh-l w70"></view><view class="sh-l w90"></view><view class="sh-l w40"></view></view></view></view>
+    </view>
+
     <view class="section">
       <view class="section-hd">
         <text class="section-tt">🌸 当季热门</text>
@@ -145,6 +151,17 @@ function goDetail(id) { uni.navigateTo({ url: `/pages/detail/detail?id=${id}` })
 .nb-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8rpx; }
 .nb-star { font-size: 22rpx; color: #E8A838; }
 .nb-dist { font-size: 22rpx; color: #C4817A; font-weight: 600; flex-shrink: 0; }
+
+.shimmer { padding: 24rpx; }
+.sh-pills { display: flex; gap: 14rpx; margin-bottom: 24rpx; }
+.sh-pill { width: 120rpx; height: 48rpx; border-radius: 24rpx; background: linear-gradient(90deg,#f0e8e4 25%,#e8ddd8 50%,#f0e8e4 75%); background-size: 200% 100%; animation: shim 1.5s infinite; }
+.sh-card-row { display: flex; gap: 16rpx; margin-bottom: 16rpx; }
+.sh-hcard { flex: 1; display: flex; background: rgba(255,255,255,0.88); border-radius: 20rpx; overflow: hidden; }
+.sh-himg { width: 120rpx; height: 120rpx; flex-shrink: 0; background: linear-gradient(90deg,#f0e8e4 25%,#e8ddd8 50%,#f0e8e4 75%); background-size: 200% 100%; animation: shim 1.5s infinite; }
+.sh-hbody { flex: 1; padding: 16rpx; }
+.sh-l { height: 22rpx; border-radius: 11rpx; background: linear-gradient(90deg,#f0e8e4 25%,#e8ddd8 50%,#f0e8e4 75%); background-size: 200% 100%; animation: shim 1.5s infinite; margin-bottom: 14rpx; }
+.w70 { width: 70%; } .w90 { width: 90%; } .w50 { width: 50%; } .w40 { width: 40%; }
+@keyframes shim { 0%{background-position:200% 0}100%{background-position:-200% 0} }
 
 .empty-nearby { text-align: center; padding: 60rpx; }
 .en-icon { font-size: 48rpx; display: block; margin-bottom: 8rpx; }

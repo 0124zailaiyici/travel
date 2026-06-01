@@ -32,89 +32,110 @@
 
         <view class="tag-row"><text class="t-tag" v-for="t in (detail.tags || [])" :key="t">{{ t }}</text></view>
 
+        <!-- === ITINERARY === -->
         <view class="sec" v-if="detail.itinerary && detail.itinerary.length">
           <view class="sec-hd" @tap="toggleAllDays">
-            <text class="sec-tt">📋 行程</text>
-            <text class="sec-toggle">{{ allDaysExpanded ? '收起全部 ▲' : '展开全部 ▼' }}</text>
+            <text class="sec-tt">📋 行程安排</text>
+            <text class="sec-toggle">{{ allDaysExpanded ? '收起全部' : '展开全部' }}</text>
           </view>
-          <view class="day" v-for="(day, i) in detail.itinerary" :key="i">
-            <view class="day-hd" @tap="toggleDay(i)">
-              <text class="day-tt">Day {{ i + 1 }} · {{ day.title }}</text>
-              <text class="day-arrow">{{ expandedDays[i] ? '▲' : '▼' }}</text>
-            </view>
-            <view class="day-body" v-if="expandedDays[i]">
-              <view class="ts" v-if="day.morning"><text class="tl ba">上午</text><text class="tx">{{ day.morning }}</text></view>
-              <view class="ts" v-if="day.afternoon"><text class="tl bp">下午</text><text class="tx">{{ day.afternoon }}</text></view>
-              <view class="ts" v-if="day.evening"><text class="tl be">晚上</text><text class="tx">{{ day.evening }}</text></view>
-              <view class="meals" v-if="mealsList(day.meals).length">
-                <text class="ml-tt">🍽️ 推荐美食</text>
-                <text class="ml-i" v-for="(m, mi) in mealsList(day.meals)" :key="mi">· {{ m }}</text>
+          <view class="timeline">
+            <view class="day" v-for="(day, i) in detail.itinerary" :key="i">
+              <view class="day-dot"></view>
+              <view class="day-hd" @tap="toggleDay(i)">
+                <view><text class="day-label">Day {{ i + 1 }}</text><text class="day-tt">{{ day.title }}</text></view>
+                <text class="day-arrow">{{ expandedDays[i] ? '▾' : '▸' }}</text>
+              </view>
+              <view class="day-body" v-if="expandedDays[i]">
+                <view class="ts" v-if="day.morning"><text class="tl ba">🌅 上午</text><text class="tx">{{ day.morning }}</text></view>
+                <view class="ts" v-if="day.afternoon"><text class="tl bp">🌤 下午</text><text class="tx">{{ day.afternoon }}</text></view>
+                <view class="ts" v-if="day.evening"><text class="tl be">🌙 晚上</text><text class="tx">{{ day.evening }}</text></view>
+                <view class="meals" v-if="mealsList(day.meals).length">
+                  <text class="ml-i" v-for="(m, mi) in mealsList(day.meals)" :key="mi">{{ m }}</text>
+                </view>
               </view>
             </view>
           </view>
         </view>
 
-        <view class="sec" v-if="detail.tips && detail.tips.length">
-          <text class="sec-tt">⚠️ 避坑</text>
-          <view class="tip" v-for="(tip, i) in detail.tips" :key="i">
-            <view class="tip-n"><text>{{ i + 1 }}</text></view>
-            <text class="tip-t">{{ tip }}</text>
+        <!-- === BUDGET === -->
+        <view class="sec" v-if="budgetEntries.length">
+          <view class="sec-hd">
+            <text class="sec-tt">💰 预算明细</text>
           </view>
-        </view>
-
-        <view class="sec" v-if="budgetEntries().length">
-          <text class="sec-tt">💰 预算明细</text>
+          <view class="bg-summary" v-if="budgetTotal">
+            <text class="bg-total">¥{{ budgetTotal }} <text class="bg-note">/人</text></text>
+          </view>
           <view class="bg-list">
-            <view class="bg-cat" v-for="e in budgetEntries()" :key="e.key">
-              <view class="bg-hd">
-                <text class="bg-l">{{ e.label }}</text>
-                <text class="bg-v">{{ e.total ? '¥' + e.total : '免费' }}</text>
+            <view class="bg-row" v-for="e in budgetEntries" :key="e.key">
+              <view class="bg-bar-track">
+                <view class="bg-bar" :style="{ width: budgetBarWidth(e.total) + '%', background: e.barColor }"></view>
               </view>
-              <view class="bg-items" v-if="e.items.length">
-                <text class="bg-item" v-for="(item, ii) in e.items" :key="ii">· {{ item.name }} ¥{{ item.cost }}</text>
+              <view class="bg-body">
+                <view class="bg-top">
+                  <text class="bg-icon">{{ e.icon }}</text>
+                  <text class="bg-label">{{ e.label }}</text>
+                  <text class="bg-amount">¥{{ e.total }}</text>
+                </view>
+                <view class="bg-detail" v-if="e.items.length">
+                  <text class="bg-item" v-for="(item, ii) in e.items" :key="ii">· {{ item.name }} ¥{{ item.cost }}</text>
+                </view>
               </view>
             </view>
           </view>
         </view>
 
+        <!-- === TRANSPORT === -->
         <view class="sec" v-if="detail.route || detail.transportDetail || detail.transport_guide">
-          <text class="sec-tt">🚗 交通方案</text>
+          <view class="sec-hd"><text class="sec-tt">🚗 交通方案</text></view>
 
-          <view class="rt-box" v-if="detail.route">
-            <text class="rt-ori">📍 从你的位置出发</text>
-            <view class="rt-row" v-if="detail.route.driving">
-              <text class="rt-m">🚗 驾车</text>
-              <text class="rt-info">
-                {{ detail.route.driving.distance }}km ·
-                约{{ detail.route.driving.duration }}分钟
-                <text v-if="detail.route.driving.tolls">· 路费¥{{ detail.route.driving.tolls }}</text>
-              </text>
-            </view>
-            <view class="rt-row" v-if="detail.route.transit">
-              <text class="rt-m">🚇 公交/高铁</text>
-              <text class="rt-info">
-                约{{ detail.route.transit.duration }}分钟 ·
-                费用¥{{ detail.route.transit.cost }}
-                <text v-if="detail.route.transit.summary">· {{ detail.route.transit.summary }}</text>
-              </text>
+          <!-- Real-time route from user location -->
+          <view class="tp-route" v-if="detail.route">
+            <view class="tp-origin">📍 从你的位置出发</view>
+            <view class="tp-cards">
+              <view class="tp-card" v-if="detail.route.driving">
+                <view class="tp-icon drv">🚗</view>
+                <view class="tp-body">
+                  <text class="tp-type">驾车</text>
+                  <text class="tp-meta">{{ detail.route.driving.distance }}km · 约{{ detail.route.driving.duration }}分钟<text v-if="detail.route.driving.tolls"> · 路费¥{{ detail.route.driving.tolls }}</text></text>
+                </view>
+              </view>
+              <view class="tp-card" v-if="detail.route.transit">
+                <view class="tp-icon bus">🚇</view>
+                <view class="tp-body">
+                  <text class="tp-type">公交/高铁</text>
+                  <text class="tp-meta">约{{ detail.route.transit.duration }}分钟 · 费用¥{{ detail.route.transit.cost }} <text v-if="detail.route.transit.summary">· {{ detail.route.transit.summary }}</text></text>
+                </view>
+              </view>
             </view>
           </view>
 
-          <view v-if="detail.transportDetail">
-            <view class="tr-section" v-if="detail.transportDetail.to_destination">
-              <text class="tr-label">🚄 怎么去</text>
-              <text class="tr-text">{{ detail.transportDetail.to_destination }}</text>
+          <!-- Static transport guide -->
+          <view class="tp-guide" v-if="detail.transportDetail">
+            <view class="tp-guide-item" v-if="detail.transportDetail.to_destination">
+              <text class="tp-gl">🚄 怎么去</text>
+              <text class="tp-gt">{{ detail.transportDetail.to_destination }}</text>
             </view>
-            <view class="tr-section" v-if="detail.transportDetail.around">
-              <text class="tr-label">🚌 当地交通</text>
-              <text class="tr-text">{{ detail.transportDetail.around }}</text>
+            <view class="tp-guide-item" v-if="detail.transportDetail.around">
+              <text class="tp-gl">🚌 当地交通</text>
+              <text class="tp-gt">{{ detail.transportDetail.around }}</text>
             </view>
-            <view class="tr-section" v-if="detail.transportDetail.parking">
-              <text class="tr-label">🚗 自驾停车</text>
-              <text class="tr-text">{{ detail.transportDetail.parking }}</text>
+            <view class="tp-guide-item" v-if="detail.transportDetail.parking">
+              <text class="tp-gl">🅿️ 自驾停车</text>
+              <text class="tp-gt">{{ detail.transportDetail.parking }}</text>
             </view>
           </view>
-          <view class="tb-note" v-else-if="!detail.route">当前目的地暂无详细交通指南</view>
+          <view class="tb-note" v-else-if="!detail.route">暂无详细交通指南</view>
+        </view>
+
+        <!-- === TIPS === -->
+        <view class="sec" v-if="detail.tips && detail.tips.length">
+          <view class="sec-hd"><text class="sec-tt">⚠️ 避坑指南</text></view>
+          <view class="tip-list">
+            <view class="tip" v-for="(tip, i) in detail.tips" :key="i">
+              <text class="tip-n">{{ i + 1 }}</text>
+              <text class="tip-t">{{ tip }}</text>
+            </view>
+          </view>
         </view>
 
         <view class="ab"><button class="nav-bt" @tap="navigate">📍 导航去</button></view>
@@ -140,18 +161,37 @@ function toggleAllDays() {
 }
 const bg = ref('linear-gradient(135deg,#E8B4AE,#C4817A,#9A5E58)')
 const bgs = ['linear-gradient(135deg,#E8B4AE,#C4817A,#9A5E58)','linear-gradient(135deg,#8BA88A,#5B7B5A,#3D5A3C)','linear-gradient(135deg,#E8C4A0,#C4817A,#9A5E58)','linear-gradient(135deg,#C4817A,#5B7B5A,#3D5A3C)','linear-gradient(135deg,#F0D5C0,#E8B4AE,#C4817A)']
-const labels = { transport:'交通', accommodation:'住宿', food:'餐饮', tickets:'门票', other:'其他' }
-const budgetLabels = { transport:'往返交通', accommodation:'住宿', food:'餐饮', tickets:'门票', other:'其他' }
+const labels = { transport:'往返交通', accommodation:'住宿', food:'餐饮', tickets:'门票', other:'其他' }
+const icons = { transport:'🚗', accommodation:'🏨', food:'🍜', tickets:'🎫', other:'📦' }
+const barColors = { transport:'linear-gradient(90deg,#5B7B5A,#8BA88A)', accommodation:'linear-gradient(90deg,#9A5E58,#C4817A)', food:'linear-gradient(90deg,#C4917A,#E8B4AE)', tickets:'linear-gradient(90deg,#5B7B8A,#8BA8BA)', other:'linear-gradient(90deg,#9A9A9A,#C0C0C0)' }
 
-function budgetEntries() {
+const budgetTotal = computed(() => {
+  const b = detail.value.budget
+  if (!b) return 0
+  const entries = Object.entries(b).filter(([k]) => k !== '_detail' && k !== '_transport')
+  const total = entries.reduce((s, [, v]) => s + (typeof v === 'object' ? v.total || 0 : Number(v) || 0), 0)
+  return total
+})
+
+const maxBudget = computed(() => {
+  const entries = budgetEntries.value
+  if (!entries.length) return 0
+  return Math.max(...entries.map(e => e.total), 1)
+})
+
+const budgetEntries = computed(() => {
   const b = detail.value.budget
   if (!b) return []
   return Object.entries(b).filter(([k]) => k !== '_detail' && k !== '_transport').map(([k, v]) => {
-    if (typeof v === 'object' && v !== null) {
-      return { key: k, label: labels[k] || k, total: v.total || 0, items: v.items || [{ name: budgetLabels[k] || k, cost: v.total || 0 }] }
-    }
-    return { key: k, label: labels[k] || k, total: v || 0, items: [{ name: budgetLabels[k] || k, cost: v || 0 }] }
+    const total = typeof v === 'object' ? v.total || 0 : Number(v) || 0
+    const items = typeof v === 'object' ? v.items || [] : []
+    return { key: k, label: labels[k] || k, icon: icons[k] || '📌', total, items, barColor: barColors[k] || 'linear-gradient(90deg,#E8B4AE,#C4817A)' }
   })
+})
+
+function budgetBarWidth(val) {
+  if (!maxBudget.value) return 0
+  return Math.max((val / maxBudget.value) * 100, 4)
 }
 
 function getF() { try { return JSON.parse(uni.getStorageSync('huaxi_favs')||'[]') } catch(e) { return [] } }
@@ -172,9 +212,19 @@ onLoad(async (o) => {
 })
 function mealsList(m) {
   if (!m) return []
-  if (Array.isArray(m)) return m
-  if (typeof m === 'string') return m.split(/[；;]/).map(s => s.trim()).filter(Boolean)
-  return []
+  let arr = m
+  if (typeof m === 'string') {
+    try { arr = JSON.parse(m) } catch(e) { arr = m.split(/[；;]/).map(s => s.trim()).filter(Boolean) }
+  }
+  if (!Array.isArray(arr)) return []
+  return arr.map(item => {
+    if (typeof item === 'object' && item !== null) {
+      const name = item.name || ''
+      const tries = item.must_try ? item.must_try.join('、') : ''
+      return name + (tries ? '：' + tries : '')
+    }
+    return item
+  }).filter(Boolean)
 }
 function navigate() {
   if (detail.value.lat && detail.value.lng) uni.openLocation({ latitude:detail.value.lat, longitude:detail.value.lng, name:detail.value.name })
@@ -185,6 +235,7 @@ function navigate() {
 .dp { height: 100vh; background: #FDF8F4; }
 .dp-scroll { height: 100%; padding-bottom: 100rpx; }
 
+/* shimmer */
 .shim { padding: 0 24rpx; }
 .shim-hero { height: 420rpx; border-radius: 0 0 24rpx 24rpx; background: linear-gradient(90deg,#f0e8e4 25%,#e8ddd8 50%,#f0e8e4 75%); background-size:200% 100%; animation: sh 1.5s infinite; }
 .shim-card { margin-top: 20rpx; padding: 28rpx; background: rgba(255,255,255,0.88); border-radius: 20rpx; }
@@ -192,6 +243,7 @@ function navigate() {
 .w60{width:60%}.w40{width:40%}.w80{width:80%}.w50{width:50%}.w90{width:90%}
 @keyframes sh { 0%{background-position:200% 0}100%{background-position:-200% 0} }
 
+/* hero */
 .hero-w { position: relative; height: 420rpx; overflow: hidden; background: #f0e8e4; }
 .hero-i { width: 100%; height: 100%; }
 .hero-fb { position: absolute; top:0;left:0;right:0;bottom:0; display: flex; align-items: flex-end; justify-content: center; }
@@ -204,58 +256,78 @@ function navigate() {
 .fav-bt { position: absolute; top: 60rpx; right: 24rpx; font-size: 44rpx; z-index: 3; }
 
 .weather { margin: -20rpx 24rpx 0; position: relative; z-index: 2; padding: 10rpx 20rpx; background: rgba(91,123,90,0.1); border-radius: 16rpx; display: inline-flex; font-size: 22rpx; color: #5B7B5A; }
-
-.desc-box { margin: 16rpx 24rpx 0; font-size: 24rpx; color: #8A7A76; line-height: 1.7; word-break: break-word; overflow-wrap: break-word; }
+.desc-box { margin: 16rpx 24rpx 0; font-size: 24rpx; color: #8A7A76; line-height: 1.7; }
 .tag-row { display: flex; flex-wrap: wrap; gap: 8rpx; margin: 12rpx 24rpx; }
 .t-tag { padding: 4rpx 18rpx; border-radius: 20rpx; font-size: 20rpx; background: rgba(196,129,122,0.08); color: #C4817A; }
 
-.sec { margin: 20rpx 24rpx; padding: 24rpx; background: rgba(255,255,255,0.88); border-radius: 20rpx; box-shadow: 0 2rpx 14rpx rgba(196,129,122,0.04); }
+/* section container */
+.sec { margin: 20rpx 24rpx; padding: 20rpx 20rpx 24rpx; background: rgba(255,255,255,0.88); border-radius: 20rpx; box-shadow: 0 2rpx 14rpx rgba(196,129,122,0.04); }
 .sec-tt { font-size: 28rpx; font-weight: 600; color: #2C2422; display: block; }
-.sec-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16rpx; cursor: pointer; }
+.sec-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14rpx; }
 .sec-toggle { font-size: 22rpx; color: #C4817A; }
 
-.day-hd { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 10rpx; }
-.day-arrow { font-size: 20rpx; color: #C4817A; }
-.day-body { overflow: hidden; }
-
-.day { margin-bottom: 16rpx; padding: 16rpx; background: rgba(196,129,122,0.04); border-radius: 14rpx; border-left: 4rpx solid #C4817A; }
-.day-tt { font-size: 24rpx; font-weight: 600; color: #C4817A; margin-bottom: 10rpx; display: block; }
+/* ===== ITINERARY — TIMELINE ===== */
+.timeline { position: relative; padding-left: 28rpx; }
+.timeline::before { content: ''; position: absolute; left: 8rpx; top: 10rpx; bottom: 10rpx; width: 3rpx; background: linear-gradient(to bottom, rgba(196,129,122,0.35), rgba(139,168,138,0.35), rgba(200,200,200,0.15)); border-radius: 2rpx; }
+.day { position: relative; margin-bottom: 16rpx; padding: 16rpx; background: rgba(196,129,122,0.04); border-radius: 14rpx; }
+.day-dot { position: absolute; left: -25rpx; top: 22rpx; width: 14rpx; height: 14rpx; border-radius: 50%; border: 2rpx solid #FDF8F4; background: #C4817A; box-shadow: 0 0 8rpx rgba(196,129,122,0.35); }
+.day-hd { display: flex; justify-content: space-between; align-items: flex-start; cursor: pointer; }
+.day-label { font-size: 20rpx; font-weight: 700; color: #C4817A; letter-spacing: 1px; display: block; margin-bottom: 2rpx; }
+.day-tt { font-size: 26rpx; font-weight: 600; color: #2C2422; display: block; }
+.day-arrow { font-size: 18rpx; color: #C4817A; margin-top: 4rpx; flex-shrink: 0; }
+.day-body { margin-top: 12rpx; }
 .ts { display: flex; gap: 10rpx; margin: 8rpx 0; }
-.tl { width: 64rpx; flex-shrink: 0; font-size: 20rpx; font-weight: 600; text-align: center; padding: 4rpx 0; border-radius: 10rpx; height: fit-content; }
+.tl { flex-shrink: 0; font-size: 18rpx; font-weight: 600; padding: 2rpx 8rpx; border-radius: 8rpx; height: fit-content; line-height: 1.6; }
 .ba { background: rgba(232,180,174,0.2); color: #C4817A; }
 .bp { background: rgba(91,123,90,0.15); color: #5B7B5A; }
 .be { background: rgba(44,36,34,0.08); color: #5C4A46; }
 .tx { font-size: 22rpx; color: #2C2422; line-height: 1.7; flex: 1; }
 
-.meals { margin-top: 10rpx; padding: 12rpx 14rpx; background: rgba(232,196,160,0.12); border-radius: 10rpx; }
-.ml-tt { font-size: 22rpx; font-weight: 600; color: #C4817A; display: block; margin-bottom: 6rpx; }
-.ml-i { font-size: 20rpx; color: #5C4A46; display: block; margin: 3rpx 0; line-height: 1.5; }
+/* meal pills */
+.meals { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 10rpx; padding-top: 10rpx; border-top: 1rpx solid rgba(196,129,122,0.08); }
+.ml-i { display: inline-flex; padding: 4rpx 12rpx; background: rgba(232,180,160,0.08); border: 1rpx solid rgba(232,180,160,0.12); border-radius: 10rpx; font-size: 20rpx; color: #8A6A5A; }
 
-.tip { display: flex; gap: 10rpx; padding: 10rpx 0; border-bottom: 1rpx solid rgba(196,129,122,0.05); }
-.tip:last-child { border-bottom: none; }
-.tip-n { width: 32rpx; height: 32rpx; border-radius: 50%; flex-shrink: 0; background: rgba(232,196,160,0.3); color: #C4817A; display: flex; align-items: center; justify-content: center; font-size: 18rpx; margin-top: 2rpx; }
+/* ===== BUDGET — BARS ===== */
+.bg-summary { padding: 16rpx 18rpx; background: rgba(196,129,122,0.06); border: 1rpx solid rgba(196,129,122,0.1); border-radius: 14rpx; margin-bottom: 16rpx; }
+.bg-total { font-size: 36rpx; font-weight: 700; color: #C4817A; }
+.bg-note { font-size: 22rpx; font-weight: 400; color: #8A7A76; }
+.bg-list { display: flex; flex-direction: column; gap: 12rpx; }
+.bg-row { position: relative; padding: 12rpx 14rpx; background: rgba(196,129,122,0.02); border-radius: 12rpx; overflow: hidden; }
+.bg-bar-track { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: rgba(196,129,122,0.04); border-radius: 12rpx; }
+.bg-bar { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 12rpx 4rpx 4rpx 12rpx; opacity: 0.12; transition: width 0.6s ease; }
+.bg-body { position: relative; z-index: 1; }
+.bg-top { display: flex; align-items: center; gap: 8rpx; margin-bottom: 4rpx; }
+.bg-icon { font-size: 24rpx; }
+.bg-label { font-size: 24rpx; color: #8A7A76; flex: 1; }
+.bg-amount { font-size: 26rpx; font-weight: 700; color: #2C2422; }
+.bg-detail { padding: 4rpx 0 0 32rpx; }
+.bg-item { font-size: 20rpx; color: #8A7A76; display: block; margin: 3rpx 0; line-height: 1.5; }
+
+/* ===== TRANSPORT ===== */
+.tp-route { margin-bottom: 14rpx; }
+.tp-origin { font-size: 22rpx; font-weight: 600; color: #5B7B5A; margin-bottom: 10rpx; }
+.tp-cards { display: flex; flex-direction: column; gap: 10rpx; }
+.tp-card { display: flex; gap: 12rpx; align-items: flex-start; padding: 14rpx; background: rgba(91,123,90,0.04); border: 1rpx solid rgba(91,123,90,0.08); border-radius: 14rpx; }
+.tp-icon { width: 44rpx; height: 44rpx; border-radius: 12rpx; display: flex; align-items: center; justify-content: center; font-size: 22rpx; flex-shrink: 0; }
+.tp-icon.drv { background: rgba(91,123,90,0.15); }
+.tp-icon.bus { background: rgba(122,122,154,0.12); }
+.tp-body { flex: 1; min-width: 0; }
+.tp-type { font-size: 24rpx; font-weight: 600; color: #2C2422; display: block; margin-bottom: 3rpx; }
+.tp-meta { font-size: 20rpx; color: #8A7A76; line-height: 1.5; }
+
+.tp-guide { }
+.tp-guide-item { padding: 14rpx; background: rgba(255,255,255,0.5); border-radius: 12rpx; margin-bottom: 8rpx; }
+.tp-gl { font-size: 22rpx; font-weight: 600; color: #5B7B5A; display: block; margin-bottom: 4rpx; }
+.tp-gt { font-size: 22rpx; color: #8A7A76; line-height: 1.7; display: block; }
+.tb-note { text-align: center; padding: 20rpx; background: rgba(196,129,122,0.04); border-radius: 12rpx; font-size: 22rpx; color: #C4817A; }
+
+/* ===== TIPS ===== */
+.tip-list { display: flex; flex-direction: column; gap: 8rpx; }
+.tip { display: flex; gap: 12rpx; padding: 14rpx; background: rgba(196,129,122,0.02); border-radius: 12rpx; border-left: 4rpx solid rgba(232,180,160,0.3); }
+.tip-n { width: 28rpx; height: 28rpx; border-radius: 50%; flex-shrink: 0; background: rgba(232,196,160,0.2); color: #C4817A; display: flex; align-items: center; justify-content: center; font-size: 18rpx; font-weight: 600; margin-top: 2rpx; }
 .tip-t { font-size: 22rpx; color: #8A7A76; line-height: 1.6; flex: 1; }
 
-.bg-list { display: flex; flex-direction: column; gap: 16rpx; }
-.bg-cat { background: rgba(196,129,122,0.03); border-radius: 12rpx; padding: 14rpx; }
-.bg-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6rpx; }
-.bg-l { font-size: 24rpx; color: #8A7A76; font-weight: 500; }
-.bg-v { font-size: 28rpx; font-weight: 700; color: #C4817A; }
-.bg-items { padding-left: 8rpx; }
-.bg-item { font-size: 22rpx; color: #5C4A46; display: block; margin: 4rpx 0; line-height: 1.5; }
-
-.tb { background: rgba(91,123,90,0.06); border-radius: 12rpx; padding: 16rpx; font-size: 22rpx; color: #8A7A76; line-height: 1.7; }
-.tb-note { background: rgba(196,129,122,0.06); border-radius: 12rpx; padding: 16rpx; font-size: 22rpx; color: #C4817A; text-align: center; }
-.rt-box { background: rgba(91,123,90,0.06); border-radius: 12rpx; padding: 16rpx; margin-bottom: 16rpx; }
-.rt-ori { font-size: 22rpx; font-weight: 600; color: #5B7B5A; display: block; margin-bottom: 10rpx; }
-.rt-row { display: flex; gap: 10rpx; margin: 6rpx 0; align-items: baseline; }
-.rt-m { font-size: 22rpx; color: #C4817A; font-weight: 600; width: 100rpx; flex-shrink: 0; }
-.rt-info { font-size: 22rpx; color: #8A7A76; line-height: 1.5; }
-
-.tr-section { margin-bottom: 16rpx; }
-.tr-label { font-size: 24rpx; font-weight: 600; color: #5B7B5A; display: block; margin-bottom: 6rpx; }
-.tr-text { font-size: 22rpx; color: #8A7A76; line-height: 1.7; display: block; }
-
-.ab { padding: 20rpx 24rpx 40rpx; }
+/* nav button */
+.ab { padding: 12rpx 24rpx 40rpx; }
 .nav-bt { width: 100%; padding: 26rpx; background: linear-gradient(135deg,#C4817A,#9A5E58); color: #fff; border: none; border-radius: 50rpx; font-size: 28rpx; font-weight: 600; box-shadow: 0 6rpx 24rpx rgba(196,129,122,0.3); }
 </style>

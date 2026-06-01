@@ -27,6 +27,14 @@ function parseDest(d) {
   return { ...d, highlights: JSON.parse(d.highlights || '[]'), tags: JSON.parse(d.tags || '[]') }
 }
 
+router.get('/suggestions', (req, res) => {
+  const { q = '' } = req.query
+  if (!q.trim()) return res.json([])
+  const db = getDb()
+  const rows = db.prepare(`SELECT id, name FROM destinations WHERE name LIKE ? OR tags LIKE ? LIMIT 8`).all(`%${q}%`, `%${q}%`)
+  res.json(rows)
+})
+
 router.get('/search', async (req, res) => {
   const { q = '', city = '', lat, lng } = req.query
   const db = getDb()
