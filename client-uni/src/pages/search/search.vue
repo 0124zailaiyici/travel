@@ -2,24 +2,34 @@
   <view class="sp">
     <view class="sp-top">
       <text class="sp-back" @tap="goBack">‹</text>
-      <input class="sp-input" v-model="query" placeholder="搜索目的地…" @confirm="doSearch" confirm-type="search" @input="onInput" @blur="hideSuggest" />
+      <input class="sp-input" v-model="query" placeholder="搜索目的地…" @confirm="doSearch" confirm-type="search" @input="onInput" @focus="onFocus" @blur="hideSuggest" />
     </view>
     <view class="sp-suggest" v-if="suggestions.length && showSuggest">
       <view class="sg-item" v-for="s in suggestions" :key="s.id" @tap="pickSuggest(s)">{{ s.name }}</view>
+    </view>
+    <view class="sp-history" v-if="!query.trim() && !suggestions.length && history.length">
+      <view class="sp-hd">最近搜索</view>
+      <view class="sp-h-list">
+        <text class="sp-h-item" v-for="(h, i) in history" :key="i" @tap="pickHistory(h)">🕐 {{ h }}</text>
+      </view>
     </view>
 
     <scroll-view class="sp-filter" scroll-x enhanced show-scrollbar="false">
       <text class="fp" v-for="f in filters" :key="f.key" :class="{ act: activeFilter === f.key }" @tap="switchFilter(f.key)">{{ f.label }}</text>
     </scroll-view>
 
-    <text class="sp-count" v-if="!loading && list.length">共 <text class="hl">{{ list.length }}</text> 个结果</text>
+    <scroll-view class="sp-dfilter" scroll-x enhanced show-scrollbar="false" v-if="list.length">
+      <text class="dfp" v-for="r in distRanges" :key="r.key" :class="{ act: activeDist === r.key }" @tap="switchDist(r.key)">{{ r.label }}</text>
+    </scroll-view>
+
+    <text class="sp-count" v-if="!loading && displayList.length">共 <text class="hl">{{ displayList.length }}</text> 个结果</text>
 
     <view class="sp-shimmer" v-if="loading">
       <view class="sh-card" v-for="i in 4" :key="i"><view class="sh-img"></view><view class="sh-body"><view class="sh-l w60"></view><view class="sh-l w90"></view><view class="sh-l w40"></view></view></view>
     </view>
 
     <view class="sp-list" v-if="!loading">
-      <view class="rs-card" v-for="d in list" :key="d.id" @tap="goDetail(d.id)">
+      <view class="rs-card" v-for="d in displayList" :key="d.id" @tap="goDetail(d.id)">
         <image class="rs-img" :src="d.image_url" mode="aspectFill" lazy-load @error="d.imgErr = true" v-if="!d.imgErr"></image>
         <view class="rs-fb" v-if="d.imgErr">{{ d.icon || '🌸' }}</view>
         <view class="rs-body">
@@ -37,17 +47,17 @@
           </view>
         </view>
       </view>
-      <view class="sp-empty" v-if="!loading && list.length === 0 && searched">
+      <view class="sp-empty" v-if="!loading && displayList.length === 0 && searched">
         <text class="e-icon">🔍</text>
-        <text class="e-tt">没找到相关目的地</text>
-        <text class="e-sub">试试其他关键词</text>
+        <text class="e-tt">{{ list.length ? '当前距离范围内没有结果' : '没找到相关目的地' }}</text>
+        <text class="e-sub">试试其他关键词或调整距离</text>
       </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { onLoad, onPullDownRefresh } from '@dcloudio/uni-app'
 import { api } from '../../api/index.js'
 import { getLocation } from '../../api/location.js'
@@ -57,7 +67,43 @@ const filters = [{ key:'distance', label:'最近' },{ key:'rating', label:'评�
 
 const suggestions = ref([]); const showSuggest = ref(false); let suggestTimer = null
 
-onLoad((o) => { if (o.q) { query.value = o.q; doSearch() } })
+// distance filter
+const activeDist = ref(0)
+const distRanges = [
+  { key:0, label:'全部' },
+  { key:50, label:'50km' },
+  { key:100, label:'100km' },
+  { key:200, label:'200km' },
+  { key:500, label:'500km' }
+]
+function switchDist(k) { activeDist.value = k }
+
+// filtered display list
+const displayList = ref([])
+watch([list, activeDist], () => {
+  const max = activeDist.value
+  displayList.value = !max ? list.value : list.value.filter(d => (d.distance || 9999) <= max)
+}, { immediate: true })
+
+// search history
+const history = ref([])
+function loadHistory() {
+  try {
+    const raw = JSON.parse(uni.getStorageSync('search_history') || '[]')
+    if (!Array.isArray(raw)) { history.value = []; return }
+    history.value = raw.filter(x => typeof x === 'string')
+  } catch(e) { history.value = [] }
+}
+function saveHistory(q) {
+  if (!q || !q.trim) return
+  const s = String(q).trim()
+  if (!s) return
+  const h = [s, ...history.value.filter(x => x !== s)].slice(0, 8)
+  uni.setStorageSync('search_history', JSON.stringify(h))
+  history.value = h
+}
+
+onLoad((o) => { loadHistory(); if (o.q) { query.value = o.q; doSearch() } })
 function onInput() {
   clearTimeout(suggestTimer)
   if (!query.value.trim()) { suggestions.value = []; showSuggest.value = false; return }
@@ -66,11 +112,16 @@ function onInput() {
     showSuggest.value = suggestions.value.length > 0
   }, 150)
 }
+function onFocus() {
+  if (!query.value.trim()) loadHistory()
+}
 function pickSuggest(s) { query.value = s.name; showSuggest.value = false; doSearch() }
+function pickHistory(h) { query.value = h; doSearch() }
 function hideSuggest() { setTimeout(() => { showSuggest.value = false }, 200) }
 
 async function doSearch() {
-  if (!query.value.trim()) return; loading.value = true; searched.value = true; showSuggest.value = false
+  if (!query.value.trim()) return; loading.value = true; searched.value = true; showSuggest.value = false; activeDist.value = 0
+  saveHistory(query.value)
   try { const loc = await getLocation(); list.value = await api.searchDestinations(query.value, '', loc) }
   catch(e) { console.error(e) }
   finally { loading.value = false }
@@ -118,6 +169,15 @@ function goBack() { uni.navigateBack() }
 .rs-star { color: #E8A838; }
 .rs-tags { display: flex; flex-wrap: wrap; gap: 6rpx; margin-top: 6rpx; }
 .rs-tag { padding: 4rpx 14rpx; border-radius: 14rpx; font-size: 20rpx; background: rgba(196,129,122,0.08); color: #C4817A; }
+
+.sp-history { margin: 0 24rpx; padding: 16rpx 0; }
+.sp-hd { font-size: 22rpx; color: #8A7A76; margin-bottom: 10rpx; }
+.sp-h-list { display: flex; flex-wrap: wrap; gap: 10rpx; }
+.sp-h-item { font-size: 22rpx; color: #5C4A46; padding: 6rpx 16rpx; background: rgba(255,255,255,0.7); border-radius: 24rpx; }
+
+.sp-dfilter { padding: 0 24rpx 12rpx; white-space: nowrap; }
+.dfp { display: inline-flex; padding: 6rpx 20rpx; margin-right: 8rpx; border-radius: 24rpx; font-size: 22rpx; background: rgba(255,255,255,0.5); color: #8A7A76; }
+.dfp.act { background: rgba(91,123,90,0.15); color: #5B7B5A; font-weight: 600; }
 
 .sp-suggest { margin: 0 24rpx; background: #fff; border-radius: 12rpx; box-shadow: 0 4rpx 20rpx rgba(44,36,34,0.08); position: relative; z-index: 10; }
 .sg-item { padding: 20rpx 24rpx; font-size: 26rpx; color: #2C2422; border-bottom: 1rpx solid #f5efeb; }

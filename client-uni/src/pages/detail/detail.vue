@@ -146,7 +146,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { api } from '../../api/index.js'
 import { getLocation } from '../../api/location.js'
 
@@ -165,20 +165,6 @@ const labels = { transport:'往返交通', accommodation:'住宿', food:'餐饮'
 const icons = { transport:'🚗', accommodation:'🏨', food:'🍜', tickets:'🎫', other:'📦' }
 const barColors = { transport:'linear-gradient(90deg,#5B7B5A,#8BA88A)', accommodation:'linear-gradient(90deg,#9A5E58,#C4817A)', food:'linear-gradient(90deg,#C4917A,#E8B4AE)', tickets:'linear-gradient(90deg,#5B7B8A,#8BA8BA)', other:'linear-gradient(90deg,#9A9A9A,#C0C0C0)' }
 
-const budgetTotal = computed(() => {
-  const b = detail.value.budget
-  if (!b) return 0
-  const entries = Object.entries(b).filter(([k]) => k !== '_detail' && k !== '_transport')
-  const total = entries.reduce((s, [, v]) => s + (typeof v === 'object' ? v.total || 0 : Number(v) || 0), 0)
-  return total
-})
-
-const maxBudget = computed(() => {
-  const entries = budgetEntries.value
-  if (!entries.length) return 0
-  return Math.max(...entries.map(e => e.total), 1)
-})
-
 const budgetEntries = computed(() => {
   const b = detail.value.budget
   if (!b) return []
@@ -187,6 +173,19 @@ const budgetEntries = computed(() => {
     const items = typeof v === 'object' ? v.items || [] : []
     return { key: k, label: labels[k] || k, icon: icons[k] || '📌', total, items, barColor: barColors[k] || 'linear-gradient(90deg,#E8B4AE,#C4817A)' }
   })
+})
+
+const budgetTotal = computed(() => {
+  const b = detail.value.budget
+  if (!b) return 0
+  const entries = budgetEntries.value
+  return entries.reduce((s, e) => s + e.total, 0)
+})
+
+const maxBudget = computed(() => {
+  const entries = budgetEntries.value
+  if (!entries.length) return 0
+  return Math.max(...entries.map(e => e.total), 1)
 })
 
 function budgetBarWidth(val) {
@@ -210,6 +209,11 @@ onLoad(async (o) => {
     bg.value = bgs[parseInt(o.id.replace('d','')) % bgs.length]
   } catch(e) { console.error(e); uni.showToast({ title:'加载失败', icon:'none' }) }
 })
+onShareAppMessage(() => ({
+  title: detail.value.name + ' - 花期',
+  path: '/pages/detail/detail?id=' + detail.value.id,
+  imageUrl: detail.value.image_url
+}))
 function mealsList(m) {
   if (!m) return []
   let arr = m

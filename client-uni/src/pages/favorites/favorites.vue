@@ -1,6 +1,11 @@
 <template>
   <view class="fp">
     <view class="fp-hd">❤️ 我的收藏</view>
+
+    <view class="fp-shimmer" v-if="loading">
+      <view class="fs-card" v-for="i in 3" :key="i"><view class="fs-img"></view><view class="fs-body"><view class="fs-l w70"></view><view class="fs-l w90"></view><view class="fs-l w40"></view></view></view>
+    </view>
+
     <view class="fp-empty" v-if="!loading && list.length === 0">
       <text class="fp-e-icon">🔖</text>
       <text class="fp-e-tt">还没有收藏</text>
@@ -46,6 +51,14 @@ function goDetail(id) { uni.navigateTo({ url: `/pages/detail/detail?id=${id}` })
 <style>
 .fp { min-height: 100vh; background: #FDF8F4; padding: 20rpx 24rpx; }
 .fp-hd { font-size: 34rpx; font-weight: 700; color: #2C2422; margin-bottom: 24rpx; }
+
+.fp-shimmer { display: flex; flex-direction: column; gap: 16rpx; }
+.fs-card { display: flex; background: rgba(255,255,255,0.88); border-radius: 20rpx; overflow: hidden; }
+.fs-img { width: 160rpx; height: 160rpx; flex-shrink: 0; background: linear-gradient(90deg,#f0e8e4 25%,#e8ddd8 50%,#f0e8e4 75%); background-size:200% 100%; animation: fsh 1.5s infinite; }
+.fs-body { flex: 1; padding: 20rpx; }
+.fs-l { height: 22rpx; border-radius: 11rpx; background: linear-gradient(90deg,#f0e8e4 25%,#e8ddd8 50%,#f0e8e4 75%); background-size:200% 100%; animation: fsh 1.5s infinite; margin-bottom: 14rpx; }
+.w70 { width: 70%; } .w90 { width: 90%; } .w40 { width: 40%; }
+@keyframes fsh { 0%{background-position:200% 0}100%{background-position:-200% 0} }
 .fp-empty { text-align: center; padding: 120rpx 0; }
 .fp-e-icon { font-size: 64rpx; display: block; margin-bottom: 16rpx; }
 .fp-e-tt { font-size: 28rpx; color: #8A7A76; display: block; }
