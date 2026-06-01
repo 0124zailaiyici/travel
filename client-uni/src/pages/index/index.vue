@@ -132,16 +132,16 @@ function goDetail(id) { uni.navigateTo({ url: `/pages/detail/detail?id=${id}` })
 .sea-card { display: flex; background: rgba(255,255,255,0.88); border-radius: 20rpx; overflow: hidden; box-shadow: 0 2rpx 12rpx rgba(196,129,122,0.06); }
 .sea-body { flex: 1; padding: 18rpx 20rpx; display: flex; flex-direction: column; justify-content: center; }
 .sea-name { font-size: 26rpx; font-weight: 600; color: #2C2422; margin-bottom: 4rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sea-desc { font-size: 22rpx; color: #8A7A76; line-height: 1.5; max-height: 3em; overflow: hidden; word-break: break-all; }
+.sea-desc { font-size: 22rpx; color: #8A7A76; line-height: 1.5; word-break: break-word; overflow-wrap: break-word; }
 .sea-meta { display: flex; gap: 14rpx; font-size: 20rpx; color: #8A7A76; margin-top: 6rpx; }
-.sea-img { width: 160rpx; height: 160rpx; flex-shrink: 0; background: #f0e8e4; }
+.sea-img { width: 160rpx; min-height: 160rpx; flex-shrink: 0; align-self: stretch; background: #f0e8e4; }
 
 .nearby-list { padding: 0 24rpx; display: flex; flex-direction: column; gap: 16rpx; }
 .nb-card { display: flex; background: rgba(255,255,255,0.88); border-radius: 20rpx; overflow: hidden; box-shadow: 0 2rpx 14rpx rgba(196,129,122,0.06); }
-.nb-img { width: 180rpx; height: 180rpx; flex-shrink: 0; background: #f0e8e4; }
+.nb-img { width: 180rpx; min-height: 180rpx; flex-shrink: 0; align-self: stretch; background: #f0e8e4; }
 .nb-body { flex: 1; padding: 16rpx 18rpx; display: flex; flex-direction: column; }
 .nb-name { font-size: 26rpx; font-weight: 600; color: #2C2422; margin-bottom: 4rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.nb-desc { font-size: 22rpx; color: #8A7A76; line-height: 1.5; max-height: 3em; overflow: hidden; flex: 1; word-break: break-all; }
+.nb-desc { font-size: 22rpx; color: #8A7A76; line-height: 1.5; flex: 1; word-break: break-word; overflow-wrap: break-word; }
 .nb-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8rpx; }
 .nb-star { font-size: 22rpx; color: #E8A838; }
 .nb-dist { font-size: 22rpx; color: #C4817A; font-weight: 600; }
