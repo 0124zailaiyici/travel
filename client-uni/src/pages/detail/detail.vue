@@ -28,7 +28,7 @@
           <text>{{ detail.weather.condition }} {{ detail.weather.temp }}</text>
         </view>
 
-        <view class="desc-box"><text>{{ detail.description }}</text></view>
+        <view class="desc-box">{{ detail.description }}</view>
 
         <view class="tag-row"><text class="t-tag" v-for="t in (detail.tags || [])" :key="t">{{ t }}</text></view>
 
@@ -199,7 +199,8 @@ function navigate() {
 .hero-mask { position: absolute; bottom:0;left:0;right:0; height: 180rpx; background: linear-gradient(transparent,#FDF8F4); }
 .hero-info { position: absolute; bottom: 24rpx; left: 24rpx; right: 24rpx; z-index: 2; }
 .hero-name { font-size: 36rpx; font-weight: 700; color: #fff; text-shadow: 0 2rpx 12rpx rgba(0,0,0,0.3); display: block; margin-bottom: 6rpx; }
-.hero-stats { display: flex; flex-wrap: wrap; gap: 12rpx 16rpx; font-size: 22rpx; color: rgba(255,255,255,0.9); text-shadow: 0 1rpx 6rpx rgba(0,0,0,0.2); }
+.hero-stats { display: flex; flex-wrap: wrap; gap: 8rpx 12rpx; font-size: 22rpx; color: rgba(255,255,255,0.9); text-shadow: 0 1rpx 6rpx rgba(0,0,0,0.2); }
+.hero-stats text { white-space: nowrap; flex-shrink: 0; }
 .fav-bt { position: absolute; top: 60rpx; right: 24rpx; font-size: 44rpx; z-index: 3; }
 
 .weather { margin: -20rpx 24rpx 0; position: relative; z-index: 2; padding: 10rpx 20rpx; background: rgba(91,123,90,0.1); border-radius: 16rpx; display: inline-flex; font-size: 22rpx; color: #5B7B5A; }

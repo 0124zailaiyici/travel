@@ -97,7 +97,7 @@ function goBack() { uni.navigateBack() }
 .rs-top { display: flex; justify-content: space-between; align-items: baseline; overflow: hidden; }
 .rs-name { font-size: 28rpx; font-weight: 600; color: #2C2422; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
 .rs-dist { font-size: 22rpx; color: #C4817A; font-weight: 600; flex-shrink: 0; margin-left: 8rpx; }
-.rs-desc { font-size: 22rpx; color: #8A7A76; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 6rpx 0 4rpx; }
+.rs-desc { font-size: 22rpx; color: #8A7A76; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin: 6rpx 0 4rpx; word-break: break-word; }
 .rs-meta { display: flex; gap: 14rpx; font-size: 22rpx; margin: 4rpx 0; }
 .rs-star { color: #E8A838; }
 .rs-tags { display: flex; flex-wrap: wrap; gap: 6rpx; margin-top: 6rpx; }
