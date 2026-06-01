@@ -24,7 +24,7 @@
             <text class="rs-name">{{ d.name }}</text>
             <text class="rs-dist">{{ d.distance || '?' }}km</text>
           </view>
-          <text class="rs-desc">{{ d.description }}</text>
+          <view class="rs-desc">{{ d.description }}</view>
           <view class="rs-meta">
             <text class="rs-star">⭐ {{ d.rating }}</text>
             <text>{{ d.duration || '1日游' }}</text>
@@ -94,10 +94,10 @@ function goBack() { uni.navigateBack() }
 .rs-img { width: 200rpx; height: 200rpx; flex-shrink: 0; background: #f0e8e4; }
 .rs-fb { position: absolute; left: 0; top: 0; width: 200rpx; height: 200rpx; display: flex; align-items: center; justify-content: center; font-size: 48rpx; background: linear-gradient(135deg,#E8B4AE,#C4817A); }
 .rs-body { flex: 1; padding: 16rpx 18rpx; display: flex; flex-direction: column; }
-.rs-top { display: flex; justify-content: space-between; align-items: baseline; overflow: hidden; }
+.rs-top { display: flex; justify-content: space-between; align-items: baseline; min-width: 0; }
 .rs-name { font-size: 28rpx; font-weight: 600; color: #2C2422; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
 .rs-dist { font-size: 22rpx; color: #C4817A; font-weight: 600; flex-shrink: 0; margin-left: 8rpx; }
-.rs-desc { font-size: 22rpx; color: #8A7A76; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin: 6rpx 0 4rpx; word-break: break-word; }
+.rs-desc { font-size: 22rpx; color: #8A7A76; line-height: 1.5; max-height: 3em; overflow: hidden; margin: 6rpx 0 4rpx; word-break: break-all; }
 .rs-meta { display: flex; gap: 14rpx; font-size: 22rpx; margin: 4rpx 0; }
 .rs-star { color: #E8A838; }
 .rs-tags { display: flex; flex-wrap: wrap; gap: 6rpx; margin-top: 6rpx; }

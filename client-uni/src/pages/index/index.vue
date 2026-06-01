@@ -37,7 +37,7 @@
         <view class="sea-card" v-for="d in inSeason" :key="d.id" @tap="goDetail(d.id)">
           <view class="sea-body">
             <text class="sea-name">{{ d.name }}</text>
-            <text class="sea-desc">{{ d.description }}</text>
+            <view class="sea-desc">{{ d.description }}</view>
             <view class="sea-meta"><text>⭐ {{ d.rating }}</text><text>{{ d.best_season }}</text></view>
           </view>
           <image class="sea-img" :src="d.image_url" mode="aspectFill" lazy-load v-if="d.image_url"></image>
@@ -56,7 +56,7 @@
           <view class="nb-img" v-else style="display:flex;align-items:center;justify-content:center;font-size:36rpx">{{ d.icon || '🌸' }}</view>
           <view class="nb-body">
             <text class="nb-name">{{ d.name }}</text>
-            <text class="nb-desc">{{ d.description || d.address || '' }}</text>
+            <view class="nb-desc">{{ d.description || d.address || '' }}</view>
             <view class="nb-foot">
               <text class="nb-star">⭐ {{ d.rating }}</text>
               <text class="nb-dist">{{ d.distance }}km</text>
@@ -132,7 +132,7 @@ function goDetail(id) { uni.navigateTo({ url: `/pages/detail/detail?id=${id}` })
 .sea-card { display: flex; background: rgba(255,255,255,0.88); border-radius: 20rpx; overflow: hidden; box-shadow: 0 2rpx 12rpx rgba(196,129,122,0.06); }
 .sea-body { flex: 1; padding: 18rpx 20rpx; display: flex; flex-direction: column; justify-content: center; }
 .sea-name { font-size: 26rpx; font-weight: 600; color: #2C2422; margin-bottom: 4rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sea-desc { font-size: 22rpx; color: #8A7A76; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.sea-desc { font-size: 22rpx; color: #8A7A76; line-height: 1.5; max-height: 3em; overflow: hidden; word-break: break-all; }
 .sea-meta { display: flex; gap: 14rpx; font-size: 20rpx; color: #8A7A76; margin-top: 6rpx; }
 .sea-img { width: 160rpx; height: 160rpx; flex-shrink: 0; background: #f0e8e4; }
 
@@ -140,8 +140,8 @@ function goDetail(id) { uni.navigateTo({ url: `/pages/detail/detail?id=${id}` })
 .nb-card { display: flex; background: rgba(255,255,255,0.88); border-radius: 20rpx; overflow: hidden; box-shadow: 0 2rpx 14rpx rgba(196,129,122,0.06); }
 .nb-img { width: 180rpx; height: 180rpx; flex-shrink: 0; background: #f0e8e4; }
 .nb-body { flex: 1; padding: 16rpx 18rpx; display: flex; flex-direction: column; }
-.nb-name { font-size: 26rpx; font-weight: 600; color: #2C2422; margin-bottom: 4rpx; }
-.nb-desc { font-size: 22rpx; color: #8A7A76; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; flex: 1; word-break: break-word; }
+.nb-name { font-size: 26rpx; font-weight: 600; color: #2C2422; margin-bottom: 4rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nb-desc { font-size: 22rpx; color: #8A7A76; line-height: 1.5; max-height: 3em; overflow: hidden; flex: 1; word-break: break-all; }
 .nb-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8rpx; }
 .nb-star { font-size: 22rpx; color: #E8A838; }
 .nb-dist { font-size: 22rpx; color: #C4817A; font-weight: 600; }
