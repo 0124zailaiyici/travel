@@ -52,10 +52,10 @@ function goDetail(id) { uni.navigateTo({ url: `/pages/detail/detail?id=${id}` })
 .fp-e-sub { font-size: 24rpx; color: #C4817A; margin-top: 8rpx; display: block; }
 .fp-list { display: flex; flex-direction: column; gap: 16rpx; }
 .fp-card { display: flex; background: rgba(255,255,255,0.88); border-radius: 20rpx; overflow: hidden; box-shadow: 0 2rpx 14rpx rgba(196,129,122,0.06); }
-.fp-img { width: 160rpx; min-height: 160rpx; flex-shrink: 0; align-self: stretch; display: flex; align-items: center; justify-content: center; background: #f0e8e4; }
+.fp-img { width: 160rpx; height: 160rpx; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #f0e8e4; }
 .fp-em { font-size: 48rpx; }
 .fp-body { flex: 1; padding: 14rpx 18rpx; display: flex; flex-direction: column; }
 .fp-name { font-size: 28rpx; font-weight: 600; color: #2C2422; }
-.fp-desc { font-size: 22rpx; color: #8A7A76; margin: 4rpx 0; line-height: 1.5; word-break: break-word; overflow-wrap: break-word; }
+.fp-desc { font-size: 22rpx; color: #8A7A76; margin: 4rpx 0; line-height: 1.5; word-break: break-all; max-height: 4.5em; overflow: hidden; }
 .fp-meta { display: flex; gap: 14rpx; font-size: 20rpx; color: #8A7A76; }
 </style>
