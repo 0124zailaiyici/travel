@@ -77,13 +77,30 @@
           </view>
         </view>
 
-        <view class="sec" v-if="detail.transportDetail || detail.transport_guide">
+        <view class="sec" v-if="detail.route || detail.transportDetail || detail.transport_guide">
           <text class="sec-tt">🚗 交通方案</text>
-          <view v-if="detail.transportDetail">
-            <view class="tr-section" v-if="detail.transportDetail.to_destination">
-              <text class="tr-label">🚄 怎么去</text>
-              <text class="tr-text">{{ detail.transportDetail.to_destination }}</text>
+
+          <view class="rt-box" v-if="detail.route">
+            <text class="rt-ori">📍 从你的位置出发</text>
+            <view class="rt-row" v-if="detail.route.driving">
+              <text class="rt-m">🚗 驾车</text>
+              <text class="rt-info">
+                {{ detail.route.driving.distance }}km ·
+                约{{ detail.route.driving.duration }}分钟
+                <text v-if="detail.route.driving.tolls">· 路费¥{{ detail.route.driving.tolls }}</text>
+              </text>
             </view>
+            <view class="rt-row" v-if="detail.route.transit">
+              <text class="rt-m">🚇 公交/高铁</text>
+              <text class="rt-info">
+                约{{ detail.route.transit.duration }}分钟 ·
+                费用¥{{ detail.route.transit.cost }}
+                <text v-if="detail.route.transit.summary">· {{ detail.route.transit.summary }}</text>
+              </text>
+            </view>
+          </view>
+
+          <view v-if="detail.transportDetail">
             <view class="tr-section" v-if="detail.transportDetail.around">
               <text class="tr-label">🚌 当地交通</text>
               <text class="tr-text">{{ detail.transportDetail.around }}</text>
@@ -93,7 +110,7 @@
               <text class="tr-text">{{ detail.transportDetail.parking }}</text>
             </view>
           </view>
-          <view class="tb" v-else>{{ detail.transport_guide }}</view>
+          <view class="tb" v-else-if="!detail.route && detail.transport_guide">{{ detail.transport_guide }}</view>
         </view>
 
         <view class="ab"><button class="nav-bt" @tap="navigate">📍 导航去</button></view>
@@ -211,6 +228,12 @@ function navigate() {
 .bg-item { font-size: 22rpx; color: #5C4A46; display: block; margin: 4rpx 0; line-height: 1.5; }
 
 .tb { background: rgba(91,123,90,0.06); border-radius: 12rpx; padding: 16rpx; font-size: 22rpx; color: #8A7A76; line-height: 1.7; }
+.rt-box { background: rgba(91,123,90,0.06); border-radius: 12rpx; padding: 16rpx; margin-bottom: 16rpx; }
+.rt-ori { font-size: 22rpx; font-weight: 600; color: #5B7B5A; display: block; margin-bottom: 10rpx; }
+.rt-row { display: flex; gap: 10rpx; margin: 6rpx 0; align-items: baseline; }
+.rt-m { font-size: 22rpx; color: #C4817A; font-weight: 600; width: 100rpx; flex-shrink: 0; }
+.rt-info { font-size: 22rpx; color: #8A7A76; line-height: 1.5; }
+
 .tr-section { margin-bottom: 16rpx; }
 .tr-label { font-size: 24rpx; font-weight: 600; color: #5B7B5A; display: block; margin-bottom: 6rpx; }
 .tr-text { font-size: 22rpx; color: #8A7A76; line-height: 1.7; display: block; }

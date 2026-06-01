@@ -87,6 +87,67 @@ export async function getCityFromCoords(lat, lng) {
   } catch { return '' }
 }
 
+export async function getDrivingRoute(originLat, originLng, destLat, destLng) {
+  if (!AMAP_KEY || AMAP_KEY === 'your_amap_key') return null
+  try {
+    const { data } = await axios.get(`${BASE}/direction/driving`, {
+      params: {
+        key: AMAP_KEY,
+        origin: `${originLng},${originLat}`,
+        destination: `${destLng},${destLat}`,
+        strategy: 0, extensions: 'base'
+      }
+    })
+    if (data.status !== '1' || !data.route?.paths?.length) return null
+    const path = data.route.paths[0]
+    return {
+      distance: Math.round(path.distance / 1000),
+      duration: Math.round(path.duration / 60),
+      tolls: path.tolls || 0
+    }
+  } catch { return null }
+}
+
+export async function getTransitRoute(originLat, originLng, destLat, destLng, city = '', cityd = '') {
+  if (!AMAP_KEY || AMAP_KEY === 'your_amap_key') return null
+  try {
+    const { data } = await axios.get(`${BASE}/direction/transit/integrated`, {
+      params: {
+        key: AMAP_KEY,
+        origin: `${originLng},${originLat}`,
+        destination: `${destLng},${destLat}`,
+        city, cityd,
+        extensions: 'base'
+      }
+    })
+    if (data.status !== '1' || !data.route?.transits?.length) return null
+    const t = data.route.transits[0]
+    const segs = []
+    for (const seg of t.segments || []) {
+      if (seg.bus?.buslines?.length) {
+        for (const bl of seg.bus.buslines) {
+          const label = (bl.type === '地铁' || bl.type === '1') ? bl.name : bl.name
+          segs.push(label)
+        }
+      } else if (seg.rail?.name) {
+        const rl = seg.rail.name + (seg.rail.type === '1' ? '(高铁/动车)' : '(火车)')
+        segs.push(rl)
+      } else if (seg.taxi) {
+        segs.push('打车/网约车')
+      } else if (seg.walking?.distance && seg.walking.distance > 1000) {
+        segs.push('步行' + Math.round(seg.walking.distance / 1000) + 'km')
+      }
+    }
+    return {
+      distance: Math.round(t.distance / 1000),
+      duration: Math.round(t.duration / 60),
+      cost: t.cost || 0,
+      walkingDistance: Math.round((t.walking_distance || 0) / 1000),
+      summary: segs.length ? segs.join(' → ') : '公交/地铁'
+    }
+  } catch { return null }
+}
+
 export async function getDistanceMatrix(origins, destinations) {
   if (!AMAP_KEY || AMAP_KEY === 'your_amap_key') {
     return destinations.map(() => Math.floor(Math.random() * 300))

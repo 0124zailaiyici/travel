@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { v4 as uuid } from 'uuid'
 import { getDb } from '../models/db.js'
-import { searchPOI, searchAround, getPOIDetail, getCityFromCoords } from '../services/amap.js'
+import { searchPOI, searchAround, getPOIDetail, getCityFromCoords, getDrivingRoute, getTransitRoute } from '../services/amap.js'
 import { generateItinerary } from '../services/deepseek.js'
 import { calculateDistance } from '../utils/distance.js'
 import { getWeather } from '../services/weather.js'
@@ -187,7 +187,22 @@ router.get('/:id', async (req, res) => {
   }
   const themes = dest.id?.startsWith('d') ? db.prepare('SELECT t.*, t.id as tid FROM themes t JOIN destination_themes dt ON t.id = dt.theme_id WHERE dt.destination_id = ?').all(dest.id) : []
   const ulat = parseFloat(lat), ulng = parseFloat(lng)
-  const distance = !isNaN(ulat) && !isNaN(ulng) ? calculateDistance(ulat, ulng, dest.lat, dest.lng) : null
+  const hasULoc = !isNaN(ulat) && !isNaN(ulng)
+  const distance = hasULoc ? calculateDistance(ulat, ulng, dest.lat, dest.lng) : null
+
+  // real-time route planning from user location to destination
+  let route = null
+  if (hasULoc) {
+    const [userCity, destCity] = await Promise.all([
+      getCityFromCoords(ulat, ulng).catch(() => ''),
+      Promise.resolve(dest.address || '')
+    ])
+    const [driving, transit] = await Promise.all([
+      getDrivingRoute(ulat, ulng, dest.lat, dest.lng),
+      getTransitRoute(ulat, ulng, dest.lat, dest.lng, userCity, destCity)
+    ])
+    if (driving || transit) route = { driving, transit }
+  }
 
   const dbIt = dest.id?.startsWith('d') ? db.prepare('SELECT * FROM itineraries WHERE destination_id = ? ORDER BY day_number').all(dest.id) : []
   let itinerary
@@ -221,7 +236,7 @@ router.get('/:id', async (req, res) => {
 
   res.json(addImageUrl({
     ...dest, highlights, tags, itinerary,
-    tips: tips.map(t => t.content), budget, themes, distance, themeIcon, weather, transportDetail
+    tips: tips.map(t => t.content), budget, themes, distance, themeIcon, weather, transportDetail, route
   }))
 })
 
