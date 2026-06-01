@@ -131,7 +131,7 @@ function goDetail(id) { uni.navigateTo({ url: `/pages/detail/detail?id=${id}` })
 .sea-list { padding: 0 24rpx; display: flex; flex-direction: column; gap: 14rpx; }
 .sea-card { display: flex; background: rgba(255,255,255,0.88); border-radius: 20rpx; overflow: hidden; box-shadow: 0 2rpx 12rpx rgba(196,129,122,0.06); }
 .sea-body { flex: 1; padding: 18rpx 20rpx; display: flex; flex-direction: column; justify-content: center; }
-.sea-name { font-size: 26rpx; font-weight: 600; color: #2C2422; margin-bottom: 4rpx; }
+.sea-name { font-size: 26rpx; font-weight: 600; color: #2C2422; margin-bottom: 4rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sea-desc { font-size: 22rpx; color: #8A7A76; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sea-meta { display: flex; gap: 14rpx; font-size: 20rpx; color: #8A7A76; margin-top: 6rpx; }
 .sea-img { width: 160rpx; height: 160rpx; flex-shrink: 0; background: #f0e8e4; }

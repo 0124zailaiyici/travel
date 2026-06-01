@@ -62,16 +62,16 @@
           </view>
         </view>
 
-        <view class="sec" v-if="detail.budget && Object.keys(detail.budget).length">
+        <view class="sec" v-if="budgetEntries().length">
           <text class="sec-tt">💰 预算明细</text>
           <view class="bg-list">
-            <view class="bg-cat" v-for="(val, key) in detail.budget" :key="key">
+            <view class="bg-cat" v-for="e in budgetEntries()" :key="e.key">
               <view class="bg-hd">
-                <text class="bg-l">{{ labels[key] || key }}</text>
-                <text class="bg-v">{{ typeof val === 'object' ? '¥' + (val.total || 0) : (val ? '¥' + val : '免费') }}</text>
+                <text class="bg-l">{{ e.label }}</text>
+                <text class="bg-v">{{ e.total ? '¥' + e.total : '免费' }}</text>
               </view>
-              <view class="bg-items" v-if="typeof val === 'object' && val.items">
-                <text class="bg-item" v-for="(item, ii) in val.items" :key="ii">· {{ item.name }} ¥{{ item.cost }}</text>
+              <view class="bg-items" v-if="e.items.length">
+                <text class="bg-item" v-for="(item, ii) in e.items" :key="ii">· {{ item.name }} ¥{{ item.cost }}</text>
               </view>
             </view>
           </view>
@@ -101,6 +101,10 @@
           </view>
 
           <view v-if="detail.transportDetail">
+            <view class="tr-section" v-if="detail.transportDetail.to_destination">
+              <text class="tr-label">🚄 怎么去</text>
+              <text class="tr-text">{{ detail.transportDetail.to_destination }}</text>
+            </view>
             <view class="tr-section" v-if="detail.transportDetail.around">
               <text class="tr-label">🚌 当地交通</text>
               <text class="tr-text">{{ detail.transportDetail.around }}</text>
@@ -110,7 +114,7 @@
               <text class="tr-text">{{ detail.transportDetail.parking }}</text>
             </view>
           </view>
-          <view class="tb" v-else-if="!detail.route && detail.transport_guide">{{ detail.transport_guide }}</view>
+          <view class="tb-note" v-else-if="!detail.route">当前目的地暂无详细交通指南</view>
         </view>
 
         <view class="ab"><button class="nav-bt" @tap="navigate">📍 导航去</button></view>
@@ -137,6 +141,18 @@ function toggleAllDays() {
 const bg = ref('linear-gradient(135deg,#E8B4AE,#C4817A,#9A5E58)')
 const bgs = ['linear-gradient(135deg,#E8B4AE,#C4817A,#9A5E58)','linear-gradient(135deg,#8BA88A,#5B7B5A,#3D5A3C)','linear-gradient(135deg,#E8C4A0,#C4817A,#9A5E58)','linear-gradient(135deg,#C4817A,#5B7B5A,#3D5A3C)','linear-gradient(135deg,#F0D5C0,#E8B4AE,#C4817A)']
 const labels = { transport:'交通', accommodation:'住宿', food:'餐饮', tickets:'门票', other:'其他' }
+const budgetLabels = { transport:'往返交通', accommodation:'住宿', food:'餐饮', tickets:'门票', other:'其他' }
+
+function budgetEntries() {
+  const b = detail.value.budget
+  if (!b) return []
+  return Object.entries(b).filter(([k]) => k !== '_detail' && k !== '_transport').map(([k, v]) => {
+    if (typeof v === 'object' && v !== null) {
+      return { key: k, label: labels[k] || k, total: v.total || 0, items: v.items || [{ name: budgetLabels[k] || k, cost: v.total || 0 }] }
+    }
+    return { key: k, label: labels[k] || k, total: v || 0, items: [{ name: budgetLabels[k] || k, cost: v || 0 }] }
+  })
+}
 
 function getF() { try { return JSON.parse(uni.getStorageSync('huaxi_favs')||'[]') } catch(e) { return [] } }
 function toggleFav() {
@@ -183,12 +199,12 @@ function navigate() {
 .hero-mask { position: absolute; bottom:0;left:0;right:0; height: 180rpx; background: linear-gradient(transparent,#FDF8F4); }
 .hero-info { position: absolute; bottom: 24rpx; left: 24rpx; right: 24rpx; z-index: 2; }
 .hero-name { font-size: 36rpx; font-weight: 700; color: #fff; text-shadow: 0 2rpx 12rpx rgba(0,0,0,0.3); display: block; margin-bottom: 6rpx; }
-.hero-stats { display: flex; gap: 16rpx; font-size: 22rpx; color: rgba(255,255,255,0.9); text-shadow: 0 1rpx 6rpx rgba(0,0,0,0.2); }
+.hero-stats { display: flex; flex-wrap: wrap; gap: 12rpx 16rpx; font-size: 22rpx; color: rgba(255,255,255,0.9); text-shadow: 0 1rpx 6rpx rgba(0,0,0,0.2); }
 .fav-bt { position: absolute; top: 60rpx; right: 24rpx; font-size: 44rpx; z-index: 3; }
 
 .weather { margin: -20rpx 24rpx 0; position: relative; z-index: 2; padding: 10rpx 20rpx; background: rgba(91,123,90,0.1); border-radius: 16rpx; display: inline-flex; font-size: 22rpx; color: #5B7B5A; }
 
-.desc-box { margin: 16rpx 24rpx 0; font-size: 24rpx; color: #8A7A76; line-height: 1.7; }
+.desc-box { margin: 16rpx 24rpx 0; font-size: 24rpx; color: #8A7A76; line-height: 1.7; word-break: break-word; overflow-wrap: break-word; }
 .tag-row { display: flex; flex-wrap: wrap; gap: 8rpx; margin: 12rpx 24rpx; }
 .t-tag { padding: 4rpx 18rpx; border-radius: 20rpx; font-size: 20rpx; background: rgba(196,129,122,0.08); color: #C4817A; }
 
@@ -228,6 +244,7 @@ function navigate() {
 .bg-item { font-size: 22rpx; color: #5C4A46; display: block; margin: 4rpx 0; line-height: 1.5; }
 
 .tb { background: rgba(91,123,90,0.06); border-radius: 12rpx; padding: 16rpx; font-size: 22rpx; color: #8A7A76; line-height: 1.7; }
+.tb-note { background: rgba(196,129,122,0.06); border-radius: 12rpx; padding: 16rpx; font-size: 22rpx; color: #C4817A; text-align: center; }
 .rt-box { background: rgba(91,123,90,0.06); border-radius: 12rpx; padding: 16rpx; margin-bottom: 16rpx; }
 .rt-ori { font-size: 22rpx; font-weight: 600; color: #5B7B5A; display: block; margin-bottom: 10rpx; }
 .rt-row { display: flex; gap: 10rpx; margin: 6rpx 0; align-items: baseline; }

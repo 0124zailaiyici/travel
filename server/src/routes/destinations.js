@@ -229,6 +229,16 @@ router.get('/:id', async (req, res) => {
         db.prepare('INSERT OR IGNORE INTO tips (id, destination_id, content, sort_order) VALUES (?, ?, ?, ?)').run(uuid(), dest.id, gen.tips[i], i)
       }
     }
+    if (gen.budget) {
+      db.prepare('DELETE FROM budgets WHERE destination_id = ? AND category = ?').run(dest.id, '_detail')
+      db.prepare('INSERT INTO budgets (id, destination_id, category, amount) VALUES (?, ?, ?, ?)').run(uuid(), dest.id, '_detail', JSON.stringify(gen.budget))
+      budget = gen.budget
+    }
+    if (gen.transport) {
+      db.prepare('DELETE FROM budgets WHERE destination_id = ? AND category = ?').run(dest.id, '_transport')
+      db.prepare('INSERT INTO budgets (id, destination_id, category, amount) VALUES (?, ?, ?, ?)').run(uuid(), dest.id, '_transport', JSON.stringify(gen.transport))
+      transportDetail = gen.transport
+    }
   }
 
   const themeIcon = themes.length ? (emojiMap[themes[0].tid] || '📍') : '📍'
