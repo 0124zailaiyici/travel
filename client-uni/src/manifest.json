@@ -7,6 +7,7 @@
   "mp-weixin": {
     "appid": "wxe75115ad1e8c32c9",
     "setting": { "urlCheck": false },
-    "permission": { "scope.userLocation": { "desc": "用于获取您的位置并推荐附近目的地" } }
+    "permission": { "scope.userLocation": { "desc": "用于获取您的位置并推荐附近目的地" } },
+    "requiredPrivateInfos": ["getLocation", "chooseLocation"]
   }
 }
