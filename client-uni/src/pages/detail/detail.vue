@@ -163,9 +163,9 @@
                   <text class="cmt-s" v-if="c.rating">{{ '★'.repeat(c.rating) + '☆'.repeat(5-c.rating) }}</text>
                   <text class="cmt-t">{{ timeAgo(c.created_at) }}</text>
                 </view>
-                <text class="cmt-tx" v-if="c.parent_id" style="font-size:20rpx;color:#8A7A76;">回复</text>
+                <text class="cmt-tx" v-if="c.parent_id" style="font-size:20rpx;color:#8A7A76;">回复 @{{ findParentName(c.parent_id) }}</text>
                 <text class="cmt-tx">{{ c.content }}</text>
-                <image class="cmt-img" :src="c.image_url" mode="aspectFill" v-if="c.image_url" @tap="previewImg(c.image_url)" />
+                <image class="cmt-img" :src="c.image_url" mode="aspectFill" lazy-load v-if="c.image_url" @tap="previewImg(c.image_url)" />
                 <view class="cmt-acts">
                   <text class="cmt-act" @tap="startReply(c)">回复</text>
                   <text class="cmt-act cmt-del" v-if="c.openid === uid" @tap="deleteComment(c.id)">删除</text>
@@ -202,6 +202,7 @@
       </view>
       <view class="ci-bar-act">
         <text class="ci-bar-cam" @tap="pickImage">📷</text>
+        <view class="ci-bar-sp"></view>
         <button class="ci-bar-bt" @tap="submitComment">发布</button>
       </view>
     </view>
@@ -292,6 +293,11 @@ async function loadComments(page) {
 function loadMoreComments() {
   if (cmtLoadingMore.value || comments.value.length >= cmtTotal.value) return
   loadComments(cmtPage.value + 1)
+}
+
+function findParentName(parentId) {
+  const p = comments.value.find(c => c.id === parentId)
+  return p ? p.nickname : '已删除'
 }
 
 function timeAgo(t) {
@@ -753,9 +759,10 @@ async function saveImage(canvasNode, mode) {
 .ci-bar-img { position: relative; margin-top: 10rpx; width: 120rpx; height: 120rpx; }
 .ci-img-pre { width: 100%; height: 100%; border-radius: 12rpx; }
 .ci-img-del { position: absolute; top: -8rpx; right: -8rpx; width: 32rpx; height: 32rpx; border-radius: 50%; background: rgba(0,0,0,0.5); color: #fff; font-size: 20rpx; display: flex; align-items: center; justify-content: center; }
-.ci-bar-act { margin-top: 10rpx; display: flex; align-items: center; justify-content: flex-end; gap: 16rpx; }
-.ci-bar-cam { font-size: 40rpx; padding: 8rpx; }
-.ci-bar-bt { padding: 16rpx 40rpx; background: linear-gradient(135deg,#C4817A,#A55A52); color: #fff; border: none; border-radius: 30rpx; font-size: 28rpx; font-weight: 600; display: inline-block; }
+.ci-bar-act { margin-top: 10rpx; display: flex; align-items: center; }
+.ci-bar-sp { flex: 1; }
+.ci-bar-cam { font-size: 40rpx; padding: 8rpx; flex-shrink: 0; }
+.ci-bar-bt { padding: 16rpx 40rpx; background: linear-gradient(135deg,#C4817A,#A55A52); color: #fff; border: none; border-radius: 30rpx; font-size: 28rpx; font-weight: 600; flex-shrink: 0; }
 
 .cmt-img { width: 180rpx; height: 180rpx; border-radius: 12rpx; margin-top: 8rpx; }
 </style>
