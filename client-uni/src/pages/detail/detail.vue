@@ -165,7 +165,7 @@
                 </view>
                 <text class="cmt-tx" v-if="c.parent_id" style="font-size:20rpx;color:#8A7A76;">回复 @{{ findParentName(c.parent_id) }}</text>
                 <text class="cmt-tx">{{ c.content }}</text>
-                <image class="cmt-img" :src="fullImgUrl(c.image_url)" mode="aspectFill" v-if="c.image_url" @tap="previewImg(fullImgUrl(c.image_url))" />
+                <image class="cmt-img" :src="loadedImgUrls[c.id] || fullImgUrl(c.image_url)" mode="aspectFill" v-if="c.image_url" @tap="previewImg(loadedImgUrls[c.id] || fullImgUrl(c.image_url))" />
                 <view class="cmt-acts">
                   <text class="cmt-act" @tap="startReply(c)">回复</text>
                   <text class="cmt-act cmt-del" v-if="c.openid === uid" @tap="deleteComment(c.id)">删除</text>
@@ -261,6 +261,7 @@ watch(showShareSheet, (v) => { if (v && detail.value.id) pickShareBg() })
 // comments
 const comments = ref([])
 const commentNames = ref({})
+const loadedImgUrls = ref({})
 const loadingComments = ref(false)
 const cmtPage = ref(1)
 const cmtTotal = ref(0)
@@ -290,6 +291,7 @@ async function loadComments(page) {
     commentNames.value = m
     cmtTotal.value = res.total
     cmtPage.value = page || 1
+    loadCommentImages(res.list)
   } catch(e) { console.error(e) }
   finally { loadingComments.value = false; cmtLoadingMore.value = false }
 }
@@ -299,9 +301,22 @@ function loadMoreComments() {
   loadComments(cmtPage.value + 1)
 }
 
+function loadCommentImages(list) {
+  list.forEach(c => {
+    if (!c.image_url) return
+    const fullUrl = fullImgUrl(c.image_url)
+    if (loadedImgUrls.value[c.id]) return
+    wx.getImageInfo({
+      src: fullUrl,
+      success: res => { loadedImgUrls.value[c.id] = res.path },
+      fail: () => { loadedImgUrls.value[c.id] = fullUrl }
+    })
+  })
+}
+
 function fullImgUrl(url) {
   if (!url) return ''
-  if (url.startsWith('http')) return url
+  if (url.startsWith('http') || url.startsWith('data:')) return url
   return API_BASE + url
 }
 
