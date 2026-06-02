@@ -1,10 +1,10 @@
-import { getApiBase } from '../config.js'
-const BASE = () => getApiBase() + '/api'
+import { API_BASE } from '../config.js'
+const BASE = API_BASE + '/api'
 
 function request(url, data = {}, method = 'GET') {
   return new Promise((resolve, reject) => {
     uni.request({
-      url: BASE() + url,
+      url: BASE + url,
       data, method, timeout: 10000,
       success: (res) => resolve(res.data),
       fail: () => {

@@ -1,4 +1,4 @@
-import { getApiBase } from '../config.js'
+import { API_BASE } from '../config.js'
 
 let cachedLocation = null
 
@@ -20,7 +20,7 @@ export async function getLocation() {
 
   // fallback: IP location
   try {
-    const { data } = await uni.request({ url: getApiBase() + '/api/destinations/auto-location' })
+    const { data } = await uni.request({ url: API_BASE + '/api/destinations/auto-location' })
     if (data.lat && data.lng) {
       cachedLocation = { lat: data.lat, lng: data.lng }
       return cachedLocation
