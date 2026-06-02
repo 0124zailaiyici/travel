@@ -165,7 +165,7 @@
                 </view>
                 <text class="cmt-tx" v-if="c.parent_id" style="font-size:20rpx;color:#8A7A76;">回复 @{{ findParentName(c.parent_id) }}</text>
                 <text class="cmt-tx">{{ c.content }}</text>
-                <image class="cmt-img" :src="c.image_url" mode="aspectFill" lazy-load v-if="c.image_url" @tap="previewImg(c.image_url)" />
+                <view class="cmt-img" v-if="c.image_url" @tap="previewImg(fullImgUrl(c.image_url))"><text>📷</text></view>
                 <view class="cmt-acts">
                   <text class="cmt-act" @tap="startReply(c)">回复</text>
                   <text class="cmt-act cmt-del" v-if="c.openid === uid" @tap="deleteComment(c.id)">删除</text>
@@ -295,6 +295,12 @@ function loadMoreComments() {
   loadComments(cmtPage.value + 1)
 }
 
+function fullImgUrl(url) {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return API_BASE + url
+}
+
 function findParentName(parentId) {
   const p = comments.value.find(c => c.id === parentId)
   return p ? p.nickname : '已删除'
@@ -318,7 +324,7 @@ function pickImage() {
 }
 
 function previewImg(url) {
-  wx.previewImage({ urls: [url], current: url })
+  wx.previewImage({ urls: [fullImgUrl(url)], current: fullImgUrl(url) })
 }
 
 async function submitComment() {
@@ -764,5 +770,5 @@ async function saveImage(canvasNode, mode) {
 .ci-bar-cam { font-size: 40rpx; padding: 8rpx; flex-shrink: 0; }
 .ci-bar-bt { padding: 16rpx 40rpx; background: linear-gradient(135deg,#C4817A,#A55A52); color: #fff; border: none; border-radius: 30rpx; font-size: 28rpx; font-weight: 600; flex-shrink: 0; }
 
-.cmt-img { width: 180rpx; height: 180rpx; border-radius: 12rpx; margin-top: 8rpx; }
+.cmt-img { width: 80rpx; height: 80rpx; border-radius: 12rpx; margin-top: 8rpx; background: linear-gradient(135deg,#f0e8e4,#e8ddd8); display: flex; align-items: center; justify-content: center; font-size: 32rpx; }
 </style>
