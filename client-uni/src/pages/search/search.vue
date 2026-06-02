@@ -49,13 +49,19 @@
       </view>
       <view class="nb-section" v-if="nearbyList.length">
         <text class="nb-tt">📍 附近推荐</text>
-        <view class="nb-card" v-for="d in nearbyList" :key="d.id" @tap="goDetail(d.id)">
+        <view class="sp-nb-card" v-for="d in nearbyList" :key="d.id" @tap="goDetail(d.id)">
+          <view class="nb-img">
+            <image class="sni-i" :src="d.image_url" mode="aspectFill" v-if="d.image_url" />
+            <text class="sni-fb" v-else>{{ d.icon || '🌸' }}</text>
+          </view>
           <view class="nb-body">
             <text class="nb-name">{{ d.name }}</text>
-            <text class="nb-dist">{{ d.distance }}km</text>
+            <view class="nb-desc">{{ d.description }}</view>
+            <view class="nb-foot">
+              <text class="nb-star">⭐ {{ d.rating }}</text>
+              <text class="nb-dist">{{ d.distance }}km</text>
+            </view>
           </view>
-          <text class="nb-desc">{{ d.description }}</text>
-          <view class="nb-meta"><text>⭐ {{ d.rating }}</text><text>{{ d.duration || 1 }}天</text></view>
         </view>
       </view>
       <view class="nb-loading" v-if="!nbLoaded && !nearbyList.length">
@@ -273,12 +279,16 @@ function goBack() { uni.navigateBack() }
 .nb-section { margin-bottom: 24rpx; }
 .nb-tt { font-size: 28rpx; font-weight: 600; color: #2C2422; margin-bottom: 12rpx; }
 .nb-tt2 { font-size: 26rpx; color: #8A7A76; text-align: center; padding: 60rpx 0; }
-.nb-card { padding: 16rpx; background: rgba(255,255,255,0.88); border-radius: 14rpx; margin-bottom: 10rpx; box-shadow: 0 2rpx 10rpx rgba(196,129,122,0.06); }
-.nb-body { display: flex; justify-content: space-between; align-items: center; }
-.nb-name { font-size: 28rpx; font-weight: 600; color: #2C2422; }
-.nb-dist { font-size: 22rpx; color: #C4817A; font-weight: 600; }
-.nb-desc { font-size: 22rpx; color: #8A7A76; margin: 6rpx 0; word-break: break-all; max-height: 66rpx; overflow: hidden; }
-.nb-meta { display: flex; gap: 14rpx; font-size: 22rpx; color: #8A7A76; }
+.sp-nb-card { display: flex; background: rgba(255,255,255,0.88); border-radius: 20rpx; overflow: hidden; margin-bottom: 14rpx; box-shadow: 0 2rpx 14rpx rgba(196,129,122,0.06); }
+.nb-img { width: 180rpx; height: 180rpx; flex-shrink: 0; position: relative; overflow: hidden; background: linear-gradient(135deg,#E8B4AE,#C4817A); display: flex; align-items: center; justify-content: center; }
+.sni-i { width: 100%; height: 100%; }
+.sni-fb { font-size: 40rpx; }
+.nb-body { flex: 1; padding: 16rpx 18rpx; display: flex; flex-direction: column; min-width: 0; }
+.nb-name { font-size: 26rpx; font-weight: 600; color: #2C2422; margin-bottom: 4rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nb-desc { font-size: 22rpx; color: #8A7A76; line-height: 1.5; flex: 1; word-break: break-all; max-height: 99rpx; overflow: hidden; margin: 0; }
+.nb-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8rpx; }
+.nb-star { font-size: 22rpx; color: #E8A838; }
+.nb-dist { font-size: 22rpx; color: #C4817A; font-weight: 600; flex-shrink: 0; }
 .nb-loading { text-align: center; padding: 60rpx 0; color: #8A7A76; font-size: 26rpx; }
 
 /* sort + distance bar */
