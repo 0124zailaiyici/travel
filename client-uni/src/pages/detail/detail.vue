@@ -319,7 +319,7 @@ function timeAgo(t) {
 }
 
 function pickImage() {
-  wx.chooseImage({ count: 1, sizeType: ['compressed'], sourceType: ['album', 'camera'],
+  wx.chooseImage({ count: 1, sizeType: ['original'], sourceType: ['album', 'camera'],
     success: (res) => { cmtImage.value = res.tempFilePaths[0] }
   })
 }
@@ -332,18 +332,6 @@ async function submitComment() {
   const txt = cmtText.value.trim()
   if (!txt) { uni.showToast({ title: '请写点内容', icon: 'none' }); return }
   try {
-    let image_url = ''
-    if (cmtImage.value) {
-      uni.showLoading({ title: '上传中…' })
-      const res = await uni.uploadFile({
-        url: BASE + '/comments/upload',
-        filePath: cmtImage.value,
-        name: 'image'
-      })
-      const data = JSON.parse(res.data || '{}')
-      image_url = data.url || ''
-      uni.hideLoading()
-    }
     const data = {
       destination_id: detail.value.id,
       openid: uid,
@@ -351,7 +339,13 @@ async function submitComment() {
       rating: cmtRating.value || null,
       content: txt
     }
-    if (image_url) data.image_url = image_url
+    if (cmtImage.value) {
+      uni.showLoading({ title: '上传中…' })
+      const fs = uni.getFileSystemManager()
+      const base64 = fs.readFileSync(cmtImage.value, 'base64')
+      data.image_data = base64
+      uni.hideLoading()
+    }
     if (replyingTo.value) data.parent_id = replyingTo.value.id
     await api.postComment(data)
     cmtText.value = ''
