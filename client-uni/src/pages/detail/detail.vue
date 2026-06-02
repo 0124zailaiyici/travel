@@ -180,9 +180,9 @@
           <text class="ci-bar-sl" v-else>请评分</text>
         </view>
       </view>
-      <view class="ci-bar-row">
-        <textarea class="ci-bar-inp" v-model="cmtText" placeholder="分享你的旅行体验…" auto-height></textarea>
-        <button class="ci-bar-bt" @tap="submitComment" :disabled="!cmtText.trim() || !cmtRating">发布</button>
+      <textarea class="ci-bar-inp" v-model="cmtText" placeholder="分享你的旅行体验…" auto-height></textarea>
+      <view class="ci-bar-act">
+        <button class="ci-bar-bt" @tap="submitComment">发布</button>
       </view>
     </view>
 
@@ -261,8 +261,9 @@ async function loadComments() {
 }
 
 async function submitComment() {
+  if (!cmtRating.value) { uni.showToast({ title: '请先打分', icon: 'none' }); return }
   const txt = cmtText.value.trim()
-  if (!txt) return
+  if (!txt) { uni.showToast({ title: '请写点内容', icon: 'none' }); return }
   try {
     await api.postComment({
       destination_id: detail.value.id,
@@ -650,15 +651,14 @@ async function saveImage(canvasNode, mode) {
 .cmt-t { font-size: 20rpx; color: #8A7A76; margin-left: auto; }
 .cmt-tx { font-size: 24rpx; color: #5C4A46; line-height: 1.6; }
 
-.ci-bar { padding: 14rpx 20rpx; background: #fff; border-top: 1rpx solid rgba(196,129,122,0.08); flex-shrink: 0; }
+.ci-bar { padding: 14rpx 20rpx; padding-bottom: calc(14rpx + env(safe-area-inset-bottom)); background: #fff; border-top: 1rpx solid rgba(196,129,122,0.08); flex-shrink: 0; }
 .ci-bar-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10rpx; }
 .ci-bar-tt { font-size: 26rpx; font-weight: 700; }
 .ci-bar-stars { display: flex; align-items: center; gap: 2rpx; }
 .ci-bar-stars text { font-size: 36rpx; color: #ddd; padding: 6rpx 4rpx; }
 .ci-bar-stars .act { color: #F5A623; }
 .ci-bar-sl { font-size: 22rpx; color: #8A7A76; margin-left: 6rpx; font-weight: 500; }
-.ci-bar-row { display: flex; gap: 12rpx; align-items: flex-end; }
-.ci-bar-inp { flex: 1; padding: 18rpx 22rpx; background: #FAF6F2; border: 2rpx solid rgba(196,129,122,0.1); border-radius: 20rpx; font-size: 28rpx; line-height: 1.5; max-height: 160rpx; }
-.ci-bar-bt { padding: 18rpx 36rpx; background: linear-gradient(135deg,#C4817A,#A55A52); color: #fff; border: none; border-radius: 20rpx; font-size: 28rpx; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
-.ci-bar-bt[disabled] { opacity: 0.35; }
+.ci-bar-inp { display: block; width: 100%; padding: 18rpx 22rpx; background: #FAF6F2; border: 2rpx solid rgba(196,129,122,0.1); border-radius: 20rpx; font-size: 28rpx; line-height: 1.5; max-height: 160rpx; box-sizing: border-box; }
+.ci-bar-act { margin-top: 10rpx; text-align: right; }
+.ci-bar-bt { padding: 16rpx 40rpx; background: linear-gradient(135deg,#C4817A,#A55A52); color: #fff; border: none; border-radius: 30rpx; font-size: 28rpx; font-weight: 600; display: inline-block; }
 </style>
