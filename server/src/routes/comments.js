@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { v4 as uuid } from 'uuid'
+import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
@@ -8,6 +9,15 @@ import { getDb } from '../models/db.js'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads')
 fs.mkdirSync(UPLOAD_DIR, { recursive: true })
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.jpg'
+    cb(null, `${uuid()}${ext}`)
+  }
+})
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } })
 
 const router = Router()
 
@@ -18,6 +28,11 @@ function pickColor(name) {
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff
   return AVATAR_COLORS[h % AVATAR_COLORS.length]
 }
+
+router.post('/upload', upload.single('image'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: '未选择图片' })
+  res.json({ url: `/uploads/${req.file.filename}` })
+})
 
 router.get('/:id', (req, res) => {
   const db = getDb()

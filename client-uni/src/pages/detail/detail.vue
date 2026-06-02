@@ -341,9 +341,18 @@ async function submitComment() {
     }
     if (cmtImage.value) {
       uni.showLoading({ title: '上传中…' })
-      const fs = uni.getFileSystemManager()
-      const base64 = fs.readFileSync(cmtImage.value, 'base64')
-      data.image_data = base64
+      const uploadRes = await new Promise((res, rej) => {
+        uni.uploadFile({
+          url: BASE + '/comments/upload',
+          filePath: cmtImage.value,
+          name: 'image',
+          timeout: 15000,
+          success: r => res(r),
+          fail: e => rej(e)
+        })
+      })
+      const raw = typeof uploadRes.data === 'string' ? JSON.parse(uploadRes.data || '{}') : (uploadRes.data || {})
+      if (raw.url) data.image_url = raw.url
       uni.hideLoading()
     }
     if (replyingTo.value) data.parent_id = replyingTo.value.id
@@ -356,7 +365,7 @@ async function submitComment() {
     loadComments()
   } catch(e) {
     uni.hideLoading()
-    uni.showToast({ title: '发布失败', icon: 'none' })
+    uni.showToast({ title: '发布失败: ' + (e.errMsg || e.message || ''), icon: 'none' })
   }
 }
 
