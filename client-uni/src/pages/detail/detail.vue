@@ -371,21 +371,20 @@ async function genShareImage(mode) {
 
   try {
     const query = uni.createSelectorQuery()
-    const canvas = await new Promise((res, rej) => {
+    const canvasNode = await new Promise((res, rej) => {
       query.select('#shareCanvas').node((n) => {
         if (n.node) res(n.node)
-        else {
-          const ctx = uni.createCanvasContext('shareCanvas')
-          res({ ctx, toDataURL: null })
-        }
+        else rej('no node')
       }).exec()
       setTimeout(() => rej('timeout'), 3000)
     })
 
-    if (canvas.ctx && typeof canvas.ctx.drawImage === 'function') {
-      const ctx = canvas.ctx
+    if (canvasNode && canvasNode.getContext) {
+      const dpr = uni.getSystemInfoSync().pixelRatio || 2
       const W = 600, H = 780
-      canvas.width = W; canvas.height = H
+      canvasNode.width = W * dpr; canvasNode.height = H * dpr
+      const ctx = canvasNode.getContext('2d')
+      ctx.scale(dpr, dpr)
 
       ctx.fillStyle = shareBg.value
       ctx.fillRect(0, 0, W, H)
@@ -401,54 +400,54 @@ async function genShareImage(mode) {
       ctx.globalAlpha = 1
 
       ctx.textAlign = 'center'
-      ctx.font = 'bold 48px sans-serif'
+      ctx.font = 'bold 56px sans-serif'
       ctx.fillStyle = '#2C2422'
-      ctx.fillText(d.themeIcon || '🌸', W / 2, 110)
+      ctx.fillText(d.themeIcon || '🌸', W / 2, 120)
 
-      ctx.font = 'bold 30px sans-serif'
+      ctx.font = 'bold 36px sans-serif'
       ctx.fillStyle = '#2C2422'
-      ctx.fillText(d.name, W / 2, 170)
+      ctx.fillText(d.name, W / 2, 190)
 
-      ctx.font = '18px sans-serif'
+      ctx.font = '22px sans-serif'
       ctx.fillStyle = '#8A7A76'
-      ctx.fillText('⭐ ' + d.rating + ' · ' + (d.best_season || '全年') + ' · ' + d.duration + '日', W / 2, 210)
+      ctx.fillText('⭐ ' + d.rating + ' · ' + (d.best_season || '全年') + ' · ' + d.duration + '日', W / 2, 235)
 
       ctx.fillStyle = 'rgba(255,255,255,0.7)'
-      roundRect(ctx, 50, 240, 500, 140, 16)
+      roundRect(ctx, 50, 270, 500, 150, 16)
       ctx.fill()
 
       ctx.textAlign = 'left'
-      ctx.font = '15px sans-serif'
+      ctx.font = '18px sans-serif'
       ctx.fillStyle = '#8A7A76'
-      ctx.fillText('💌 ' + uid.slice(-4) + ' 的推荐', 80, 278)
+      ctx.fillText('💌 ' + uid.slice(-4) + ' 的推荐', 80, 312)
 
-      ctx.font = '20px sans-serif'
+      ctx.font = '24px sans-serif'
       ctx.fillStyle = '#2C2422'
 
-      const lines = wrapText(ctx, msg, 460, 20)
+      const lines = wrapText(ctx, msg, 460, 24)
       lines.forEach((l, i) => {
-        if (i < 4) ctx.fillText(l, 80, 316 + i * 32)
+        if (i < 4) ctx.fillText(l, 80, 354 + i * 36)
       })
 
       ctx.textAlign = 'center'
       const pills = ['⭐ ' + d.rating, '📅 ' + (d.best_season || '全年'), '⏱ ' + d.duration + '日']
-      const pw = 140, ph = 36, gap = 16
+      const pw = 150, ph = 44, gap = 20
       const startX = (W - (pills.length * pw + (pills.length - 1) * gap)) / 2
       pills.forEach((p, i) => {
         const x = startX + i * (pw + gap)
         ctx.fillStyle = 'rgba(196,129,122,0.08)'
-        roundRect(ctx, x, 430, pw, ph, 18)
+        roundRect(ctx, x, 480, pw, ph, 22)
         ctx.fill()
-        ctx.font = '15px sans-serif'
+        ctx.font = '19px sans-serif'
         ctx.fillStyle = '#C4817A'
-        ctx.fillText(p, x + pw / 2, 454)
+        ctx.fillText(p, x + pw / 2, 508)
       })
 
-      ctx.font = '13px sans-serif'
+      ctx.font = '16px sans-serif'
       ctx.fillStyle = 'rgba(138,122,118,0.5)'
-      ctx.fillText('—— 来自「花期」的推荐 打开小程序查看完整攻略 ——', W / 2, 540)
+      ctx.fillText('—— 来自「花期」的推荐 打开小程序查看完整攻略 ——', W / 2, 600)
 
-      canvas.toDataURL ? saveImage(canvas, mode) : saveFallback(mode)
+      saveImage(canvasNode, mode)
     } else {
       saveFallback(mode)
     }
@@ -487,10 +486,10 @@ function wrapText(ctx, text, maxWidth, fontSize) {
   return lines
 }
 
-async function saveImage(canvas, mode) {
+async function saveImage(canvasNode, mode) {
   try {
     const tempPath = await new Promise((res, rej) => {
-      wx.canvasToTempFilePath({ canvas, success: (r) => res(r.tempFilePath), fail: rej })
+      wx.canvasToTempFilePath({ canvas: canvasNode, success: (r) => res(r.tempFilePath), fail: rej })
     })
     if (mode === 'share') {
       wx.previewImage({ urls: [tempPath], current: tempPath })
