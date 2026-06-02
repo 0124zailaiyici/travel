@@ -31,8 +31,7 @@ function pickColor(name) {
 
 router.post('/upload', upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: '未选择图片' })
-  const base = `${req.protocol}://${req.get('host')}`
-  res.json({ url: `${base}/uploads/${req.file.filename}` })
+  res.json({ url: `/uploads/${req.file.filename}` })
 })
 
 router.get('/:id', (req, res) => {
