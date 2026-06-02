@@ -14,7 +14,7 @@
     <view class="fp-list" v-if="list.length">
       <view class="fp-card" v-for="d in list" :key="d.id" @tap="goDetail(d.id)">
         <view class="fp-img">
-          <image class="fi-i" :src="d.image_url" mode="aspectFill" lazy-load v-if="d.image_url" />
+          <image class="fi-i" :src="d.image_url" mode="aspectFill" v-if="d.image_url" />
           <text class="fi-fb" v-else>{{ d.themeIcon || '🌸' }}</text>
         </view>
         <view class="fp-body">

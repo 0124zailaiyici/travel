@@ -47,7 +47,8 @@
             <view class="sea-meta"><text>⭐ {{ d.rating }}</text><text>{{ d.best_season }}</text></view>
           </view>
           <view class="sea-img" :style="'background:linear-gradient(135deg,#D4A69E,#B36A5E)'">
-            <image class="si-i" :src="d.image_url" mode="aspectFill" lazy-load />
+            <image class="si-i" :src="d.image_url" mode="aspectFill" v-if="d.image_url" />
+            <text class="si-fb" v-else>{{ d.icon || '🌸' }}</text>
           </view>
         </view>
       </view>
@@ -60,7 +61,7 @@
       <view class="nearby-list" v-if="nearby.length">
         <view class="nb-card" v-for="d in nearby" :key="d.id" @tap="goDetail(d.id)">
           <view class="nb-img">
-            <image class="ni-i" :src="d.image_url" mode="aspectFill" lazy-load v-if="d.image_url" />
+            <image class="ni-i" :src="d.image_url" mode="aspectFill" v-if="d.image_url" />
             <text class="ni-fb" v-else>{{ d.icon || '🌸' }}</text>
           </view>
           <view class="nb-body">
@@ -145,6 +146,7 @@ function goDetail(id) { uni.navigateTo({ url: `/pages/detail/detail?id=${id}` })
 .sea-meta { display: flex; gap: 14rpx; font-size: 20rpx; color: #8A7A76; margin-top: 6rpx; min-width: 0; }
 .sea-img { width: 160rpx; height: 160rpx; flex-shrink: 0; position: relative; overflow: hidden; }
 .si-i { width: 100%; height: 100%; }
+.si-fb { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 48rpx; }
 
 .nearby-list { padding: 0 24rpx; display: flex; flex-direction: column; gap: 16rpx; }
 .nb-card { display: flex; background: rgba(255,255,255,0.88); border-radius: 20rpx; overflow: hidden; box-shadow: 0 2rpx 14rpx rgba(196,129,122,0.06); }

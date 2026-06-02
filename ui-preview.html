@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>花期 - 新功能设计预览</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>花期 - 评论重新设计 V2</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -11,218 +11,198 @@
   --bg: #FAF6F2;
   --surface: #FFFFFF;
   --primary: #C4817A;
-  --primary-dark: #9A5E58;
+  --primary-dark: #A55A52;
   --text: #2C2422;
   --text2: #8A7A76;
-  --green: #5B7B5A;
   --border: rgba(196,129,122,0.1);
-  --shadow: 0 4rpx 24rpx rgba(44,36,34,0.06);
 }
 body {
   font-family: 'Noto Sans SC', -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text);
-  padding: 40px 20px;
+  padding: 40px 16px;
+  display: flex;
+  justify-content: center;
 }
-.page { max-width: 420px; margin: 0 auto; }
+.page { max-width: 420px; width: 100%; }
 
-/* section title */
-.sec-tt { font-size: 20px; font-weight: 700; margin: 32px 0 16px; display: flex; align-items: center; gap: 8px; }
-.sec-tt span { font-size: 14px; font-weight: 400; color: var(--text2); }
-
-/* card */
-.card { background: var(--surface); border-radius: 16px; padding: 20px; box-shadow: var(--shadow); margin-bottom: 12px; }
-
-/* share button */
-.share-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; border: none; border-radius: 40px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 12px; }
-
-/* share preview modal */
-.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
-.modal-bg.open { display: flex; }
-.modal { background: var(--surface); border-radius: 20px; width: 340px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-
-/* share image design */
-.share-img { padding: 24px; }
-.share-hd { text-align: center; margin-bottom: 16px; }
-.share-hd .emoji { font-size: 36px; }
-.share-hd .name { font-size: 22px; font-weight: 700; margin-top: 4px; }
-.share-hd .stats { font-size: 12px; color: var(--text2); margin-top: 4px; }
-.share-div { height: 1px; background: linear-gradient(90deg,transparent,var(--primary),transparent); margin: 12px 0; }
-.share-day { margin-bottom: 12px; }
-.share-day .day-tt { font-size: 14px; font-weight: 600; color: var(--primary); margin-bottom: 4px; }
-.share-day .day-t { font-size: 12px; color: var(--text2); line-height: 1.6; }
-.share-tip { font-size: 11px; color: var(--text2); background: rgba(196,129,122,0.04); padding: 10px; border-radius: 8px; margin-top: 8px; }
-.share-footer { text-align: center; font-size: 12px; color: var(--text2); margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
-
-/* comment */
-.cmt-count { font-size: 14px; color: var(--text2); margin-bottom: 12px; }
-
-.cmt-item { display: flex; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
-.cmt-item:last-child { border: none; }
-.cmt-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; }
-.cmt-body { flex: 1; min-width: 0; }
-.cmt-top { display: flex; align-items: center; gap: 8px; }
-.cmt-name { font-size: 13px; font-weight: 500; }
-.cmt-time { font-size: 11px; color: var(--text2); }
-.cmt-stars { font-size: 12px; margin-left: auto; }
-.cmt-text { font-size: 14px; line-height: 1.6; margin-top: 4px; }
-.cmt-reply { font-size: 12px; color: var(--primary); margin-top: 6px; cursor: pointer; }
-
-/* rating input */
-.rating-input { display: flex; gap: 4px; margin: 8px 0; }
-.rating-input .star { font-size: 24px; cursor: pointer; color: #ddd; transition: color .2s; }
-.rating-input .star.act { color: #F5A623; }
-
-.cmt-input-area { display: flex; gap: 8px; margin-top: 8px; }
-.cmt-input-area input { flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 20px; font-size: 14px; outline: none; background: var(--bg); }
-.cmt-input-area input:focus { border-color: var(--primary); }
-.cmt-input-area button { padding: 10px 20px; background: var(--primary); color: #fff; border: none; border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer; }
-
-.reply-to { font-size: 12px; color: var(--primary); padding: 4px 10px; background: rgba(196,129,122,0.06); border-radius: 8px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px; }
-
-/* badge */
-.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; }
-.badge.green { background: rgba(91,123,90,0.1); color: var(--green); }
-
-/* responsive */
-@media (max-width: 400px) {
-  .modal { width: 92vw; }
+/* ===== COMMENT INPUT CARD V2 ===== */
+.ci2 {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 16px rgba(44,36,34,0.05);
 }
+
+.ci2-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.ci2-tt {
+  font-size: 16px;
+  font-weight: 700;
+}
+.ci2-sub {
+  font-size: 13px;
+  color: var(--text2);
+}
+
+/* stars row */
+.ci2-stars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 14px;
+}
+.ci2-stars text {
+  font-size: 30px;
+  color: #ddd;
+  cursor: pointer;
+  padding: 4px;
+}
+.ci2-stars .act { color: #F5A623; }
+.ci2-stars .sl {
+  font-size: 13px;
+  color: var(--text2);
+  margin-left: 8px;
+  font-weight: 500;
+}
+
+/* textarea input full width */
+.ci2-inp {
+  width: 100%;
+  min-height: 110px;
+  padding: 14px 16px;
+  background: #FAF6F2;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  resize: none;
+  line-height: 1.6;
+  color: var(--text);
+  transition: border-color .2s;
+}
+.ci2-inp:focus {
+  border-color: var(--primary);
+  background: #fff;
+}
+.ci2-inp::placeholder {
+  color: #B5A5A0;
+}
+
+/* bottom row: left empty space, right button */
+.ci2-btm {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 10px;
+  gap: 10px;
+}
+.ci2-bt {
+  padding: 10px 28px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+.ci2-bt:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.ci2-bt:not(:disabled):hover {
+  opacity: 0.9;
+}
+
+/* ===== COMMENT LIST ===== */
+.cl {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 16px rgba(44,36,34,0.05);
+  margin-top: 16px;
+}
+.cl-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.cl-hd-l { font-size: 16px; font-weight: 700; }
+.cl-hd-r { font-size: 12px; color: var(--text2); }
+
+.cmt {
+  display: flex;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.cmt:last-child { border: none; }
+.cmt-av {
+  width: 36px; height: 36px; border-radius: 50%;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 14px; font-weight: 700;
+}
+.cmt-bd { flex: 1; min-width: 0; }
+.cmt-row1 {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 2px;
+}
+.cmt-n { font-size: 13px; font-weight: 600; }
+.cmt-t { font-size: 11px; color: var(--text2); }
+.cmt-s { font-size: 12px; color: #F5A623; margin-left: auto; letter-spacing: 1px; }
+.cmt-tx { font-size: 14px; color: #5C4A46; line-height: 1.6; }
 </style>
 </head>
 <body>
 <div class="page">
 
-<!-- Feature 1: Share -->
-<div class="sec-tt">📸 分享到微信「花信」 <span>明信片式轻分享卡</span></div>
-
-<div class="card">
-  <div style="font-size:14px;font-weight:600;margin-bottom:8px;">分享给朋友前的预览</div>
-
-  <!-- share card preview -->
-  <div style="background:linear-gradient(135deg,#FAF0EA,#F5E4DC);border-radius:16px;padding:24px;text-align:center;position:relative;overflow:hidden;">
-    <!-- decorative top gradient -->
-    <div style="position:absolute;top:-30px;left:-30px;right:-30px;height:120px;background:linear-gradient(135deg,#C4817A,#9A5E58,#E8C4A0);opacity:0.15;border-radius:0 0 50% 50%;"></div>
-
-    <div style="font-size:40px;margin-bottom:6px;position:relative;">🌸</div>
-    <div style="font-size:20px;font-weight:700;color:var(--text);position:relative;">武汉大学</div>
-
-    <!-- quote message -->
-    <div style="margin:14px 0 8px;padding:12px 16px;background:rgba(255,255,255,0.65);border-radius:12px;position:relative;">
-      <div style="font-size:13px;color:var(--text);line-height:1.7;font-style:italic;">
-        "上周去的，樱花刚好满开🌸<br>老斋舍屋顶拍照绝了，强烈推荐！"
-      </div>
-    </div>
-    <div style="font-size:11px;color:var(--text2);margin-bottom:12px;">—— 小樱推荐</div>
-
-    <!-- key info pills -->
-    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;position:relative;">
-      <span class="badge" style="background:rgba(196,129,122,0.12);color:var(--primary);font-size:12px;">⭐ 4.7</span>
-      <span class="badge" style="background:rgba(91,123,90,0.1);color:var(--green);font-size:12px;">📅 3-4月</span>
-      <span class="badge" style="background:rgba(44,36,34,0.06);color:var(--text2);font-size:12px;">📍 武汉</span>
-      <span class="badge" style="background:rgba(44,36,34,0.06);color:var(--text2);font-size:12px;">⏱ 1日</span>
-    </div>
-
-    <!-- brand -->
-    <div style="margin-top:14px;font-size:11px;color:var(--text2);opacity:0.6;letter-spacing:1px;">—— 来自「花期」的推荐 · 打开小程序查看完整攻略 ——</div>
+<!-- V2 Comment Input Card -->
+<div class="ci2">
+  <div class="ci2-hd">
+    <text class="ci2-tt">✏️ 写评价</text>
+    <text class="ci2-sub">给这里打分</text>
   </div>
-
-  <!-- message input -->
-  <div style="margin-top:14px;">
-    <div style="font-size:13px;font-weight:500;margin-bottom:6px;">你的推荐语</div>
-    <input type="text" value="上周去的，樱花刚好满开🌸 老斋舍屋顶拍照绝了，强烈推荐！" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:12px;font-size:13px;outline:none;background:var(--bg);">
+  <div class="ci2-stars">
+    <text class="act">★</text><text class="act">★</text><text class="act">★</text><text class="act">★</text><text>★</text>
+    <span class="sl">4分 · 很好</span>
   </div>
-
-  <button class="share-btn" onclick="document.querySelector('.modal-bg').classList.add('open')" style="margin-top:14px;">
-    💌 生成花信 · 分享到微信
-  </button>
-</div>
-
-<!-- Share preview modal -->
-<div class="modal-bg" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal">
-    <div style="padding:24px;text-align:center;">
-      <div style="font-size:14px;font-weight:600;margin-bottom:12px;">分享预览</div>
-      <div style="background:linear-gradient(135deg,#FAF0EA,#F5E4DC);border-radius:16px;padding:24px;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:-30px;left:-30px;right:-30px;height:120px;background:linear-gradient(135deg,#C4817A,#9A5E58,#E8C4A0);opacity:0.15;border-radius:0 0 50% 50%;"></div>
-        <div style="font-size:40px;margin-bottom:4px;position:relative;">🌸</div>
-        <div style="font-size:18px;font-weight:700;color:var(--text);position:relative;">武汉大学</div>
-        <div style="margin:12px 0 6px;padding:10px 14px;background:rgba(255,255,255,0.65);border-radius:12px;position:relative;">
-          <div style="font-size:12px;color:var(--text);line-height:1.6;font-style:italic;">"上周去的，樱花刚好满开🌸<br>老斋舍屋顶拍照绝了，强烈推荐！"</div>
-        </div>
-        <div style="font-size:11px;color:var(--text2);margin-bottom:10px;">—— 小樱推荐</div>
-        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;position:relative;">
-          <span class="badge" style="background:rgba(196,129,122,0.12);color:var(--primary);font-size:11px;">⭐ 4.7</span>
-          <span class="badge" style="background:rgba(91,123,90,0.1);color:var(--green);font-size:11px;">📅 3-4月</span>
-          <span class="badge" style="background:rgba(44,36,34,0.06);color:var(--text2);font-size:11px;">📍 武汉</span>
-        </div>
-        <div style="margin-top:12px;font-size:10px;color:var(--text2);opacity:0.6;letter-spacing:1px;position:relative;">—— 来自「花期」的推荐 · 打开小程序查看完整攻略 ——</div>
-      </div>
-    </div>
-    <div style="padding:0 20px 20px;display:flex;gap:10px;">
-      <button style="flex:1;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:30px;font-size:14px;cursor:pointer;" onclick="document.querySelector('.modal-bg').classList.remove('open')">取消</button>
-      <button style="flex:1;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:30px;font-size:14px;font-weight:600;cursor:pointer;">💾 保存图片</button>
-    </div>
+  <textarea class="ci2-inp" placeholder="分享你的旅行体验…">樱花季来的，人虽然多但真的很美。老斋舍的屋顶视野超好，早去能避开人群。</textarea>
+  <div class="ci2-btm">
+    <button class="ci2-bt">发布</button>
   </div>
 </div>
 
-<!-- Feature 2: Comments -->
-<div class="sec-tt">💬 评论系统 <span>发表 / 查看评价</span></div>
-
-<div class="card">
-  <div class="cmt-count">评论 <span style="font-weight:700;color:var(--text);">12</span> 条</div>
-
-  <div class="cmt-item">
-    <div class="cmt-avatar" style="background:linear-gradient(135deg,#C4817A,#9A5E58);">小</div>
-    <div class="cmt-body">
-      <div class="cmt-top">
-        <span class="cmt-name">小樱</span>
-        <span class="cmt-time">3天前</span>
-        <span class="cmt-stars">⭐⭐⭐⭐⭐</span>
+<!-- Comment List -->
+<div class="cl">
+  <div class="cl-hd">
+    <text class="cl-hd-l">评价 <span style="font-weight:400;color:var(--text2);font-size:14px;">3 条</span></text>
+    <text class="cl-hd-r">好评率 100%</text>
+  </div>
+  <div class="cmt">
+    <div class="cmt-av" style="background:linear-gradient(135deg,#C4817A,#9A5E58);">小</div>
+    <div class="cmt-bd">
+      <div class="cmt-row1">
+        <span class="cmt-n">小樱</span><span class="cmt-t">3天前</span><span class="cmt-s">★★★★★</span>
       </div>
-      <div class="cmt-text">上周刚去，樱花正好满开！老斋舍屋顶拍照绝了，建议早8点前到人少。食堂可以微信支付很方便。</div>
-      <div class="cmt-reply">回复</div>
+      <div class="cmt-tx">上周刚去，樱花正好满开！老斋舍屋顶拍照绝了，建议早8点前到人少。</div>
     </div>
   </div>
-
-  <div class="cmt-item">
-    <div class="cmt-avatar" style="background:linear-gradient(135deg,#5B7B5A,#3D5A3C);">张</div>
-    <div class="cmt-body">
-      <div class="cmt-top">
-        <span class="cmt-name">张老师</span>
-        <span class="cmt-time">1周前</span>
-        <span class="cmt-stars">⭐⭐⭐⭐</span>
+  <div class="cmt">
+    <div class="cmt-av" style="background:linear-gradient(135deg,#5B7B5A,#3D5A3C);">张</div>
+    <div class="cmt-bd">
+      <div class="cmt-row1">
+        <span class="cmt-n">张老师</span><span class="cmt-t">1周前</span><span class="cmt-s">★★★★☆</span>
       </div>
-      <div class="cmt-text">预约很难抢，但值得。建议带充电宝，拍照根本停不下来。凌波门日落很浪漫。</div>
-      <div class="cmt-reply">回复</div>
-    </div>
-  </div>
-
-  <div class="cmt-item">
-    <div class="cmt-avatar" style="background:linear-gradient(135deg,#E8C4A0,#C4817A);">T</div>
-    <div class="cmt-body">
-      <div class="cmt-top">
-        <span class="cmt-name">TravelBug</span>
-        <span class="cmt-time">2周前</span>
-        <span class="cmt-stars">⭐⭐⭐⭐⭐</span>
-      </div>
-      <div class="cmt-text">第三次来了，每次感觉都不一样。推荐校园里的文创店，樱花书签很精致🫶</div>
-      <div class="cmt-reply">回复</div>
-    </div>
-  </div>
-
-  <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-    <div style="font-size:14px;font-weight:600;margin-bottom:2px;">发表评价</div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">你对此目的地的整体印象如何？</div>
-
-    <div class="rating-input">
-      <span class="star act">★</span><span class="star act">★</span><span class="star act">★</span><span class="star act">★</span><span class="star">★</span>
-      <span style="font-size:12px;color:var(--text2);margin-left:8px;">4 分 · 很好</span>
-    </div>
-
-    <div class="cmt-input-area">
-      <input type="text" placeholder="分享你的旅行体验……">
-      <button>发布</button>
+      <div class="cmt-tx">预约很难抢，但值得。建议带充电宝，凌波门日落很浪漫。</div>
     </div>
   </div>
 </div>

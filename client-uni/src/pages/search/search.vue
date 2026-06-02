@@ -85,7 +85,7 @@
     <view class="sp-list" v-if="!loading && searched">
       <view class="rs-card" v-for="d in displayList" :key="d.id" @tap="goDetail(d.id)">
         <view class="rs-img">
-          <image class="ri-i" :src="d.image_url" mode="aspectFill" lazy-load v-if="d.image_url" />
+          <image class="ri-i" :src="d.image_url" mode="aspectFill" v-if="d.image_url" />
           <text class="ri-fb" v-else>{{ d.icon || '🌸' }}</text>
         </view>
         <view class="rs-body">

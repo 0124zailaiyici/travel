@@ -17,7 +17,7 @@
       <template v-if="detail.name">
         <view class="hero-w">
           <view class="hi">
-            <image class="hi-i" :src="detail.image_url" mode="aspectFill" lazy-load v-if="detail.image_url" />
+            <image class="hi-i" :src="detail.image_url" mode="aspectFill" v-if="detail.image_url" />
             <text class="hi-fb" v-else>{{ detail.themeIcon || '🌸' }}</text>
           </view>
           <view class="hero-mask"></view>
