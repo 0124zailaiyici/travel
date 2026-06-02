@@ -33,6 +33,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { api } from '../../api/index.js'
+import { getUserId } from '../../api/user.js'
 
 const list = ref([])
 const loading = ref(true)
@@ -40,8 +41,7 @@ const bgList = ['linear-gradient(135deg,#E8B4AE,#C4817A)','linear-gradient(135de
 
 onMounted(async () => {
   try {
-    const favs = JSON.parse(uni.getStorageSync('huaxi_favs') || '[]')
-    if (favs.length) list.value = await api.getFavorites(favs)
+    list.value = await api.syncGetFavs(getUserId())
   } catch(e) { console.error(e) }
   finally { loading.value = false }
 })

@@ -96,7 +96,7 @@ describe('Detail', () => {
     expect(res.status).toBe(200)
     expect(res.body.distance).toBeTypeOf('number')
     expect(res.body.distance).toBeGreaterThan(0)
-    // route exists but null because amap is mocked
+    // route exists but null because tencent map is mocked
     expect(res.body).toHaveProperty('route')
   })
 

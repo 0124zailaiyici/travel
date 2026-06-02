@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { v4 as uuid } from 'uuid'
 import { getDb } from '../models/db.js'
-import { searchPOI, searchAround, getPOIDetail, getCityFromCoords, getDrivingRoute, getTransitRoute } from '../services/amap.js'
+import { searchPOI, searchAround, getPOIDetail, getCityFromCoords, getDrivingRoute, getTransitRoute } from '../services/tencent.js'
 import { generateItinerary } from '../services/deepseek.js'
 import { calculateDistance } from '../utils/distance.js'
 import { getWeather } from '../services/weather.js'
@@ -36,64 +36,69 @@ router.get('/suggestions', (req, res) => {
 })
 
 router.get('/search', async (req, res) => {
-  const { q = '', city = '', lat, lng } = req.query
+  const { q = '', city = '', lat, lng, theme, minRating, maxDuration, sort: sortBy = 'distance' } = req.query
   const db = getDb()
   const keyword = q.trim()
-  let localResults = []
+
+  let sql = 'SELECT DISTINCT d.* FROM destinations d'
+  const params = []
+  const wheres = []
   if (keyword) {
-    localResults = db.prepare(`
-      SELECT DISTINCT d.* FROM destinations d
-      LEFT JOIN destination_themes dt ON d.id = dt.destination_id
-      LEFT JOIN themes t ON dt.theme_id = t.id
-      WHERE d.name LIKE ? OR d.description LIKE ? OR d.tags LIKE ? OR t.name LIKE ? OR t.query_keywords LIKE ?
-    `).all(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
-  } else {
-    localResults = db.prepare('SELECT * FROM destinations LIMIT 20').all()
+    sql += ' LEFT JOIN destination_themes dt ON d.id = dt.destination_id LEFT JOIN themes t ON dt.theme_id = t.id'
+    wheres.push('(d.name LIKE ? OR d.description LIKE ? OR d.tags LIKE ? OR t.name LIKE ? OR t.query_keywords LIKE ?)')
+    params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
   }
+  if (theme) {
+    sql += ' LEFT JOIN destination_themes dt2 ON d.id = dt2.destination_id'
+    wheres.push('dt2.theme_id = ?')
+    params.push(theme)
+  }
+  if (minRating) {
+    wheres.push('d.rating >= ?')
+    params.push(parseFloat(minRating))
+  }
+  if (maxDuration) {
+    wheres.push('d.duration <= ?')
+    params.push(parseInt(maxDuration))
+  }
+  if (city) {
+    wheres.push('d.address LIKE ?')
+    params.push(`%${city}%`)
+  }
+  const limit = keyword || theme ? 50 : 20
+  let localResults
+  if (wheres.length) {
+    localResults = db.prepare(`${sql} WHERE ${wheres.join(' AND ')} LIMIT ?`).all(...params, limit)
+  } else {
+    localResults = db.prepare('SELECT * FROM destinations ORDER BY rating DESC LIMIT ?').all(limit)
+  }
+
   const userLat2 = parseFloat(lat), userLng2 = parseFloat(lng)
   const hasLoc2 = !isNaN(userLat2) && !isNaN(userLng2)
-  const parsed = localResults.map(parseDest).map(d => ({
+  let results = localResults.map(parseDest).map(d => ({
     ...d, distance: hasLoc2 ? calculateDistance(userLat2, userLng2, d.lat, d.lng) : null
   }))
-  let amapResults = []
-  try {
-    let searchCity = city || (keyword.length <= 3 ? keyword : '')
-    if (!searchCity && lat && lng) {
-      try {
-        searchCity = await Promise.race([
-          getCityFromCoords(lat, lng),
-          new Promise(r => setTimeout(() => r(''), 2000))
-        ])
-      } catch(e) {}
-    }
-    if (keyword) {
-      // parallel search: keyword + fallback categories
-      const searches = [searchPOI(keyword, searchCity)]
-      if (amapResults.length < 3 && searchCity) {
-        for (const t of ['公园','博物馆','景点','广场','步行街','乐园']) {
-          searches.push(searchPOI(t, searchCity))
+
+  // Tencent POI supplement (only when key is available)
+  if (keyword) {
+    try {
+      const apiPois = await searchPOI(keyword, city || keyword)
+      const seen = new Set(results.map(d => d.name))
+      for (const p of apiPois) {
+        if (!seen.has(p.name)) {
+          results.push({ ...p, distance: hasLoc2 ? calculateDistance(userLat2, userLng2, p.lat, p.lng) : null })
+          seen.add(p.name)
         }
       }
-      const all = await Promise.all(searches)
-      const seen = new Set()
-      for (const arr of all) {
-        for (const item of arr) {
-          if (!seen.has(item.name)) { amapResults.push(item); seen.add(item.name) }
-        }
-      }
-    }
-  } catch (e) { console.error('Amap search error:', e.message) }
-  const seen = new Set(parsed.map(d => d.name))
-  const merged = [...parsed]
-  for (const a of amapResults) {
-    if (!seen.has(a.name)) {
-      const dist = calculateDistance(parseFloat(lat), parseFloat(lng), a.lat, a.lng)
-      merged.push({ ...a, distance: dist })
-      seen.add(a.name)
-    }
+    } catch {}
   }
-  merged.sort((a, b) => (a.distance || 9999) - (b.distance || 9999))
-  res.json(merged.map(addImageUrl))
+
+  if (sortBy === 'rating') {
+    results.sort((a, b) => (b.rating || 0) - (a.rating || 0))
+  } else {
+    results.sort((a, b) => (a.distance ?? 99999) - (b.distance ?? 99999))
+  }
+  res.json(results.map(addImageUrl))
 })
 
 router.get('/nearby', async (req, res) => {
@@ -113,21 +118,21 @@ router.get('/nearby', async (req, res) => {
     ...d, distance: calculateDistance(userLat, userLng, d.lat, d.lng), source: 'curated'
   })).filter(d => d.distance !== null).sort((a, b) => a.distance - b.distance)
 
-  // amap nearby POIs
-  let amapPois = []
-  try { amapPois = await searchAround(userLat, userLng) }
-  catch (e) { console.error('Amap around error:', e.message) }
+  // nearby POIs from map API
+  let apiPois = []
+  try { apiPois = await searchAround(userLat, userLng) }
+  catch (e) { console.error('Nearby search error:', e.message) }
 
-  // curated within 200km, then amap to fill
+  // curated within 200km, then API to fill
   const result = []
   const names = new Set()
   for (const d of local) {
-    if (d.distance > 200) break
+    if (result.length >= 20 || d.distance > 200) break
     result.push(d); names.add(d.name)
   }
-  for (const p of amapPois) {
-    if (result.length >= 8) break
-    if (!names.has(p.name)) { result.push(p); names.add(p.name); p.source = 'amap' }
+  for (const p of apiPois) {
+    if (result.length >= 20) break
+    if (!names.has(p.name)) { result.push(p); names.add(p.name); p.source = 'api' }
   }
 
   res.json(result.map(addImageUrl))
@@ -156,9 +161,7 @@ router.get('/in-season', (req, res) => {
 
 router.get('/auto-location', async (req, res) => {
   const ipLoc = await getLocationByIP()
-  if (!ipLoc) return res.json({ error: '无法定位' })
-  const city = await getCityFromCoords(ipLoc.lat, ipLoc.lng)
-  res.json({ ...ipLoc, city })
+  res.json({ ...ipLoc, city: ipLoc?.city || '' })
 })
 
 router.get('/batch', (req, res) => {
@@ -181,18 +184,6 @@ router.get('/:id', async (req, res) => {
   }
   const highlights = Array.isArray(dest.highlights) ? dest.highlights : JSON.parse(dest.highlights || '[]')
   const tags = Array.isArray(dest.tags) ? dest.tags : JSON.parse(dest.tags || '[]')
-  const tips = db.prepare('SELECT content FROM tips WHERE destination_id = ? ORDER BY sort_order').all(dest.id)
-  const transportRow = db.prepare('SELECT amount FROM budgets WHERE destination_id = ? AND category = ?').get(dest.id, '_transport')
-  let transportDetail = null
-  if (transportRow) { try { transportDetail = JSON.parse(transportRow.amount) } catch(e) {} }
-  const budgets = db.prepare('SELECT category, amount FROM budgets WHERE destination_id = ?').all(dest.id)
-  let budget = {}
-  const detail = budgets.find(b => b.category === '_detail')
-  if (detail) {
-    try { budget = JSON.parse(detail.amount) } catch(e) { budget = {} }
-  } else {
-    for (const b of budgets) budget[b.category] = b.amount
-  }
   const themes = dest.id?.startsWith('d') ? db.prepare('SELECT t.*, t.id as tid FROM themes t JOIN destination_themes dt ON t.id = dt.theme_id WHERE dt.destination_id = ?').all(dest.id) : []
   const ulat = parseFloat(lat), ulng = parseFloat(lng)
   const hasULoc = !isNaN(ulat) && !isNaN(ulng)
@@ -201,60 +192,75 @@ router.get('/:id', async (req, res) => {
   // real-time route planning from user location to destination
   let route = null
   if (hasULoc) {
-    const [userCity, destCity] = await Promise.all([
-      getCityFromCoords(ulat, ulng).catch(() => ''),
-      Promise.resolve(dest.address || '')
-    ])
     const [driving, transit] = await Promise.all([
-      getDrivingRoute(ulat, ulng, dest.lat, dest.lng),
-      getTransitRoute(ulat, ulng, dest.lat, dest.lng, userCity, destCity)
+      getDrivingRoute(ulat, ulng, dest.lat, dest.lng).catch(() => null),
+      getTransitRoute(ulat, ulng, dest.lat, dest.lng).catch(() => null)
     ])
     if (driving || transit) route = { driving, transit }
   }
 
-  const dbIt = dest.id?.startsWith('d') ? db.prepare('SELECT * FROM itineraries WHERE destination_id = ? ORDER BY day_number').all(dest.id) : []
+  // cache TTL: regenerate DeepSeek data after N days
+  const CACHE_TTL_DAYS = 7
+  const cached = dest.id?.startsWith('d') ? db.prepare('SELECT COUNT(*) as c FROM itineraries WHERE destination_id = ? AND updated_at > datetime(\'now\', ?)').get(dest.id, '-' + CACHE_TTL_DAYS + ' days') : { c: 0 }
   let itinerary
-  if (dbIt.length > 0) {
+  if (!(cached.c > 0) && dest.id?.startsWith('d')) {
+    const gen = await generateItinerary({ ...dest, highlights, tags })
+    let days = gen.itinerary
+    if (days && !Array.isArray(days)) days = Object.values(days)
+    const itin = days || []
+    const tx = db.transaction(() => {
+      db.prepare('DELETE FROM itineraries WHERE destination_id = ?').run(dest.id)
+      db.prepare('DELETE FROM tips WHERE destination_id = ?').run(dest.id)
+      db.prepare('DELETE FROM budgets WHERE destination_id = ? AND category IN (?, ?)').run(dest.id, '_detail', '_transport')
+      const insertDay = db.prepare('INSERT INTO itineraries (id, destination_id, day_number, title, morning, afternoon, evening, meals) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      for (let i = 0; i < itin.length; i++) {
+        const day = itin[i]
+        insertDay.run(uuid(), dest.id, i + 1, day.title || '', day.morning || '', day.afternoon || '', day.evening || '', JSON.stringify(day.meals || []))
+      }
+      if (gen.tips) {
+        const insertTip = db.prepare('INSERT INTO tips (id, destination_id, content, sort_order) VALUES (?, ?, ?, ?)')
+        for (let i = 0; i < gen.tips.length; i++) {
+          insertTip.run(uuid(), dest.id, gen.tips[i], i)
+        }
+      }
+      if (gen.budget) {
+        db.prepare('INSERT INTO budgets (id, destination_id, category, amount) VALUES (?, ?, ?, ?)').run(uuid(), dest.id, '_detail', JSON.stringify(gen.budget))
+      }
+      if (gen.transport) {
+        db.prepare('INSERT INTO budgets (id, destination_id, category, amount) VALUES (?, ?, ?, ?)').run(uuid(), dest.id, '_transport', JSON.stringify(gen.transport))
+      }
+    })
+    tx()
+    itinerary = itin
+  }
+  if (!itinerary) {
+    const dbIt = db.prepare('SELECT * FROM itineraries WHERE destination_id = ? ORDER BY day_number').all(dest.id)
     itinerary = dbIt.map(d => {
       let meals = JSON.parse(d.meals || '[]')
       if (typeof meals === 'string') meals = meals.split(/[；;]/).map(s => s.trim()).filter(Boolean)
       return { title: d.title, morning: d.morning, afternoon: d.afternoon, evening: d.evening, meals }
     })
-  } else {
-    const gen = await generateItinerary({ ...dest, highlights, tags })
-    let days = gen.itinerary
-    if (days && !Array.isArray(days)) days = Object.values(days)
-    itinerary = days || []
-    if (itinerary.length) {
-      const insertDay = db.prepare('INSERT INTO itineraries (id, destination_id, day_number, title, morning, afternoon, evening, meals) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-      for (let i = 0; i < itinerary.length; i++) {
-        const day = itinerary[i]
-        insertDay.run(uuid(), dest.id, i + 1, day.title || '', day.morning || '', day.afternoon || '', day.evening || '', JSON.stringify(day.meals || []))
-      }
-    }
-    if (gen.tips) {
-      for (let i = 0; i < gen.tips.length; i++) {
-        db.prepare('INSERT OR IGNORE INTO tips (id, destination_id, content, sort_order) VALUES (?, ?, ?, ?)').run(uuid(), dest.id, gen.tips[i], i)
-      }
-    }
-    if (gen.budget) {
-      db.prepare('DELETE FROM budgets WHERE destination_id = ? AND category = ?').run(dest.id, '_detail')
-      db.prepare('INSERT INTO budgets (id, destination_id, category, amount) VALUES (?, ?, ?, ?)').run(uuid(), dest.id, '_detail', JSON.stringify(gen.budget))
-      budget = gen.budget
-    }
-    if (gen.transport) {
-      db.prepare('DELETE FROM budgets WHERE destination_id = ? AND category = ?').run(dest.id, '_transport')
-      db.prepare('INSERT INTO budgets (id, destination_id, category, amount) VALUES (?, ?, ?, ?)').run(uuid(), dest.id, '_transport', JSON.stringify(gen.transport))
-      transportDetail = gen.transport
-    }
   }
 
+  // always read fresh from DB
+  const tips = db.prepare('SELECT content FROM tips WHERE destination_id = ? ORDER BY sort_order').all(dest.id).map(t => t.content)
+  const transportRow = db.prepare('SELECT amount FROM budgets WHERE destination_id = ? AND category = ?').get(dest.id, '_transport')
+  let transportDetail = null
+  if (transportRow) { try { transportDetail = JSON.parse(transportRow.amount) } catch(e) {} }
+  const budgetRows = db.prepare('SELECT category, amount FROM budgets WHERE destination_id = ?').all(dest.id)
+  let budget = {}
+  const detail = budgetRows.find(b => b.category === '_detail')
+  if (detail) {
+    try { budget = JSON.parse(detail.amount) } catch(e) { budget = {} }
+  } else {
+    for (const b of budgetRows) budget[b.category] = b.amount
+  }
   const themeIcon = themes.length ? (emojiMap[themes[0].tid] || '📍') : '📍'
   const weather = await getWeather(dest.lat, dest.lng)
 
   res.json(addImageUrl({
     ...dest, highlights, tags, itinerary,
-    tips: tips.map(t => t.content), budget, themes, distance, themeIcon, weather, transportDetail, route
+    tips, budget, themes, distance, themeIcon, weather, transportDetail, route
   }))
 })
 

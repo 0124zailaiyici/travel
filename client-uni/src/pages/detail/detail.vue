@@ -7,6 +7,13 @@
         <view class="shim-card"><view class="s-l w50"></view><view class="s-l w90"></view><view class="s-l w90"></view></view>
       </view>
 
+      <!-- === SHARE BANNER === -->
+      <view class="share-banner" @tap="showShareSheet = true">
+        <text class="sb-icon">💌</text>
+        <text class="sb-tt">分享「花信」给朋友</text>
+        <text class="sb-arrow">›</text>
+      </view>
+
       <template v-if="detail.name">
         <view class="hero-w" :style="'background:' + bg">
           <image class="hero-i" :src="detail.image_url" mode="aspectFill" lazy-load @error="imgErr = true" v-if="detail.image_url && !imgErr"></image>
@@ -138,21 +145,137 @@
           </view>
         </view>
 
-        <view class="ab"><button class="nav-bt" @tap="navigate">📍 导航去</button></view>
+        <!-- === COMMENTS === -->
+        <view class="sec" v-if="comments.length || !loadingComments">
+          <view class="sec-hd"><text class="sec-tt">💬 评价 ({{ comments.length }})</text></view>
+          <view class="cmt-list">
+            <view class="cmt-empty" v-if="!comments.length && !loadingComments">暂无评价，来当第一个分享的人吧</view>
+            <view class="cmt-item" v-for="c in comments" :key="c.id">
+              <view class="cmt-av" :style="'background:' + c.avatar_color"><text>{{ c.nickname[0] }}</text></view>
+              <view class="cmt-bd">
+                <view class="cmt-hd">
+                  <text class="cmt-n">{{ c.nickname }}</text>
+                  <text class="cmt-s" v-if="c.rating">{{ '⭐'.repeat(c.rating) }}</text>
+                  <text class="cmt-t">{{ timeAgo(c.created_at) }}</text>
+                </view>
+                <text class="cmt-tx">{{ c.content }}</text>
+              </view>
+            </view>
+          </view>
+          <view class="cmt-input-sec">
+            <text class="cmt-il">发表评价</text>
+            <view class="cmt-stars">
+              <text v-for="i in 5" :key="i" :class="{ act: i <= cmtRating }" @tap="cmtRating = i">★</text>
+              <text class="cmt-sl" v-if="cmtRating">{{ ['','很差','较差','一般','不错','很好'][cmtRating] }}</text>
+            </view>
+            <view class="cmt-row">
+              <input class="cmt-inp" v-model="cmtText" placeholder="分享你的旅行体验…" />
+              <button class="cmt-bt" @tap="submitComment" :disabled="!cmtText.trim()">发布</button>
+            </view>
+          </view>
+        </view>
+
+        <view class="ab">
+          <button class="nav-bt" @tap="navigate">📍 导航去</button>
+        </view>
       </template>
     </scroll-view>
+
+    <!-- share sheet -->
+    <view class="ss-overlay" v-if="showShareSheet" @tap="showShareSheet = false"></view>
+    <view class="ss-sheet" v-if="showShareSheet">
+      <view class="ss-hd">
+        <text class="ss-tt">💌 分享「花信」</text>
+        <text class="ss-close" @tap="showShareSheet = false">✕</text>
+      </view>
+      <view class="ss-preview" :style="{ background: shareBg }">
+        <text class="ss-emoji">{{ detail.themeIcon || '🌸' }}</text>
+        <text class="ss-dest">{{ detail.name }}</text>
+        <view class="ss-msg">
+          <text class="ss-qt">"</text>
+          <input class="ss-inp" v-model="shareMsg" placeholder="写一句推荐语…" />
+        </view>
+        <view class="ss-badges">
+          <text class="ss-badge" style="background:rgba(196,129,122,0.12);color:#C4817A;">⭐ {{ detail.rating }}</text>
+          <text class="ss-badge" style="background:rgba(91,123,90,0.1);color:#5B7B5A;">📅 {{ detail.best_season || '全年' }}</text>
+          <text class="ss-badge" style="background:rgba(44,36,34,0.06);color:#8A7A76;">{{ detail.duration }}日</text>
+        </view>
+        <text class="ss-credit">—— 来自「花期」的推荐 ——</text>
+      </view>
+      <canvas type="2d" id="shareCanvas" style="width:600px;height:780px;position:fixed;left:-9999px;top:-9999px;"></canvas>
+      <view class="ss-actions">
+        <button class="ss-btn ss-save" @tap="genShareImage('save')">💾 保存到相册</button>
+        <button class="ss-btn ss-wx" @tap="genShareImage('share')">💬 发送给朋友</button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { api } from '../../api/index.js'
 import { getLocation } from '../../api/location.js'
+import { getUserId } from '../../api/user.js'
 
 const detail = ref({}); const isFav = ref(false); const imgErr = ref(false)
 const expandedDays = ref([])
 const allDaysExpanded = computed(() => expandedDays.value.every(v => v))
+
+// share
+const showShareSheet = ref(false)
+const shareMsg = ref('')
+const shareBg = ref('#FAF0EA')
+const shareBgs = ['#FAF0EA','#EEF5EE','#F5F0EA','#F0EAEE','#F5F5F0']
+function pickShareBg() { shareBg.value = shareBgs[parseInt(detail.value.id?.replace('d','')||'0') % shareBgs.length] }
+watch(showShareSheet, (v) => { if (v && detail.value.id) pickShareBg() })
+
+// comments
+const comments = ref([])
+const loadingComments = ref(false)
+const cmtText = ref('')
+const cmtRating = ref(5)
+
+function timeAgo(t) {
+  if (!t) return ''
+  const d = new Date(t + (t.includes('Z') ? '' : 'Z'))
+  const s = Math.floor((Date.now() - d) / 1000)
+  if (s < 60) return '刚刚'
+  if (s < 3600) return Math.floor(s / 60) + '分钟前'
+  if (s < 86400) return Math.floor(s / 3600) + '小时前'
+  if (s < 2592000) return Math.floor(s / 86400) + '天前'
+  return d.toLocaleDateString('zh-CN')
+}
+
+async function loadComments() {
+  if (!detail.value.id) return
+  loadingComments.value = true
+  try { comments.value = await api.getComments(detail.value.id) }
+  catch(e) { console.error(e) }
+  finally { loadingComments.value = false }
+}
+
+async function submitComment() {
+  const txt = cmtText.value.trim()
+  if (!txt) return
+  try {
+    await api.postComment({
+      destination_id: detail.value.id,
+      openid: getUserId(),
+      nickname: '用户_' + getUserId().slice(-4),
+      rating: cmtRating.value,
+      content: txt
+    })
+    cmtText.value = ''
+    cmtRating.value = 5
+    uni.showToast({ title: '评价成功', icon: 'none' })
+    loadComments()
+  } catch(e) {
+    uni.showToast({ title: '发布失败', icon: 'none' })
+  }
+}
+
+const nickColors = ['#C4817A','#5B7B5A','#E8C4A0','#8BA88A','#9A5E58','#E8B4AE','#5B7B8A','#C4917A']
 
 function toggleDay(i) { expandedDays.value[i] = !expandedDays.value[i] }
 function toggleAllDays() {
@@ -193,20 +316,27 @@ function budgetBarWidth(val) {
   return Math.max((val / maxBudget.value) * 100, 4)
 }
 
-function getF() { try { return JSON.parse(uni.getStorageSync('huaxi_favs')||'[]') } catch(e) { return [] } }
-function toggleFav() {
-  const f = getF(); const id = detail.value.id
-  if (isFav.value) { uni.setStorageSync('huaxi_favs', JSON.stringify(f.filter(x=>x!==id))); isFav.value = false; uni.showToast({ title:'已取消',icon:'none' }) }
-  else { f.push(id); uni.setStorageSync('huaxi_favs', JSON.stringify(f)); isFav.value = true; uni.showToast({ title:'已收藏',icon:'success' }) }
+async function toggleFav() {
+  const id = detail.value.id
+  try {
+    const res = await api.syncToggleFav(getUserId(), id)
+    isFav.value = !res.removed
+    uni.showToast({ title: res.removed ? '已取消' : '已收藏', icon: 'none' })
+  } catch(e) {
+    uni.showToast({ title: '操作失败', icon: 'none' })
+  }
 }
 
 onLoad(async (o) => {
   if (!o.id) return
   try {
     const loc = await getLocation(); const data = await api.getDetail(o.id, loc)
-    detail.value = data; isFav.value = getF().includes(data.id)
+    detail.value = data
+    const favs = await api.syncGetFavs(getUserId())
+    isFav.value = favs.some(d => d.id === data.id)
     expandedDays.value = data.itinerary?.map(() => true) || []
     bg.value = bgs[parseInt(o.id.replace('d','')) % bgs.length]
+    loadComments()
   } catch(e) { console.error(e); uni.showToast({ title:'加载失败', icon:'none' }) }
 })
 onShareAppMessage(() => ({
@@ -232,6 +362,148 @@ function mealsList(m) {
 }
 function navigate() {
   if (detail.value.lat && detail.value.lng) uni.openLocation({ latitude:detail.value.lat, longitude:detail.value.lng, name:detail.value.name })
+}
+
+async function genShareImage(mode) {
+  const d = detail.value
+  const msg = shareMsg.value.trim() || '推荐这个好地方！'
+  const uid = getUserId()
+
+  try {
+    const query = uni.createSelectorQuery()
+    const canvas = await new Promise((res, rej) => {
+      query.select('#shareCanvas').node((n) => {
+        if (n.node) res(n.node)
+        else {
+          const ctx = uni.createCanvasContext('shareCanvas')
+          res({ ctx, toDataURL: null })
+        }
+      }).exec()
+      setTimeout(() => rej('timeout'), 3000)
+    })
+
+    if (canvas.ctx && typeof canvas.ctx.drawImage === 'function') {
+      const ctx = canvas.ctx
+      const W = 600, H = 780
+      canvas.width = W; canvas.height = H
+
+      ctx.fillStyle = shareBg.value
+      ctx.fillRect(0, 0, W, H)
+
+      ctx.fillStyle = '#C4817A'
+      ctx.globalAlpha = 0.08
+      ctx.beginPath()
+      ctx.moveTo(0, 0)
+      for (let x = 0; x <= W; x += 20) ctx.lineTo(x, Math.sin(x * 0.008) * 120 + 60)
+      ctx.lineTo(W, 0)
+      ctx.closePath()
+      ctx.fill()
+      ctx.globalAlpha = 1
+
+      ctx.textAlign = 'center'
+      ctx.font = 'bold 48px sans-serif'
+      ctx.fillStyle = '#2C2422'
+      ctx.fillText(d.themeIcon || '🌸', W / 2, 110)
+
+      ctx.font = 'bold 30px sans-serif'
+      ctx.fillStyle = '#2C2422'
+      ctx.fillText(d.name, W / 2, 170)
+
+      ctx.font = '18px sans-serif'
+      ctx.fillStyle = '#8A7A76'
+      ctx.fillText('⭐ ' + d.rating + ' · ' + (d.best_season || '全年') + ' · ' + d.duration + '日', W / 2, 210)
+
+      ctx.fillStyle = 'rgba(255,255,255,0.7)'
+      roundRect(ctx, 50, 240, 500, 140, 16)
+      ctx.fill()
+
+      ctx.textAlign = 'left'
+      ctx.font = '15px sans-serif'
+      ctx.fillStyle = '#8A7A76'
+      ctx.fillText('💌 ' + uid.slice(-4) + ' 的推荐', 80, 278)
+
+      ctx.font = '20px sans-serif'
+      ctx.fillStyle = '#2C2422'
+
+      const lines = wrapText(ctx, msg, 460, 20)
+      lines.forEach((l, i) => {
+        if (i < 4) ctx.fillText(l, 80, 316 + i * 32)
+      })
+
+      ctx.textAlign = 'center'
+      const pills = ['⭐ ' + d.rating, '📅 ' + (d.best_season || '全年'), '⏱ ' + d.duration + '日']
+      const pw = 140, ph = 36, gap = 16
+      const startX = (W - (pills.length * pw + (pills.length - 1) * gap)) / 2
+      pills.forEach((p, i) => {
+        const x = startX + i * (pw + gap)
+        ctx.fillStyle = 'rgba(196,129,122,0.08)'
+        roundRect(ctx, x, 430, pw, ph, 18)
+        ctx.fill()
+        ctx.font = '15px sans-serif'
+        ctx.fillStyle = '#C4817A'
+        ctx.fillText(p, x + pw / 2, 454)
+      })
+
+      ctx.font = '13px sans-serif'
+      ctx.fillStyle = 'rgba(138,122,118,0.5)'
+      ctx.fillText('—— 来自「花期」的推荐 打开小程序查看完整攻略 ——', W / 2, 540)
+
+      canvas.toDataURL ? saveImage(canvas, mode) : saveFallback(mode)
+    } else {
+      saveFallback(mode)
+    }
+  } catch(e) {
+    console.error(e)
+    saveFallback(mode)
+  }
+}
+
+function saveFallback() {
+  uni.showToast({ title: '长按卡片截图后分享给朋友', icon: 'none', duration: 3000 })
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y)
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r)
+  ctx.lineTo(x + w, y + h - r)
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+  ctx.lineTo(x + r, y + h)
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r)
+  ctx.lineTo(x, y + r)
+  ctx.quadraticCurveTo(x, y, x + r, y)
+  ctx.closePath()
+}
+
+function wrapText(ctx, text, maxWidth, fontSize) {
+  const lines = []
+  let line = ''
+  for (const ch of text) {
+    const test = line + ch
+    if (ctx.measureText(test).width > maxWidth) { lines.push(line); line = ch }
+    else line = test
+  }
+  if (line) lines.push(line)
+  return lines
+}
+
+async function saveImage(canvas, mode) {
+  try {
+    const tempPath = await new Promise((res, rej) => {
+      wx.canvasToTempFilePath({ canvas, success: (r) => res(r.tempFilePath), fail: rej })
+    })
+    if (mode === 'share') {
+      wx.previewImage({ urls: [tempPath], current: tempPath })
+      showShareSheet.value = false
+      uni.showToast({ title: '长按图片发送给朋友', icon: 'none', duration: 2000 })
+    } else {
+      await wx.saveImageToPhotosAlbum({ filePath: tempPath })
+      uni.showToast({ title: '已保存到相册', icon: 'none' })
+      showShareSheet.value = false
+    }
+  } catch(e) {
+    uni.showToast({ title: '操作失败，试试截图分享', icon: 'none' })
+  }
 }
 </script>
 
@@ -334,4 +606,54 @@ function navigate() {
 /* nav button */
 .ab { padding: 12rpx 24rpx 40rpx; }
 .nav-bt { width: 100%; padding: 26rpx; background: linear-gradient(135deg,#C4817A,#9A5E58); color: #fff; border: none; border-radius: 50rpx; font-size: 28rpx; font-weight: 600; box-shadow: 0 6rpx 24rpx rgba(196,129,122,0.3); }
+
+/* share banner */
+.share-banner { margin: 20rpx 24rpx 0; padding: 20rpx; background: linear-gradient(135deg,#FAF0EA,#F5E4DC); border-radius: 16rpx; display: flex; align-items: center; gap: 12rpx; }
+.sb-icon { font-size: 32rpx; }
+.sb-tt { flex: 1; font-size: 26rpx; font-weight: 600; color: #2C2422; }
+.sb-arrow { font-size: 32rpx; color: #C4817A; }
+
+/* share sheet */
+.ss-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 50; }
+.ss-sheet { position: fixed; bottom: 0; left: 0; right: 0; background: #FDF8F4; border-radius: 24rpx 24rpx 0 0; z-index: 51; padding: 24rpx 24rpx 40rpx; max-height: 80vh; overflow-y: auto; }
+.ss-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20rpx; }
+.ss-tt { font-size: 28rpx; font-weight: 700; color: #2C2422; }
+.ss-close { font-size: 32rpx; color: #8A7A76; padding: 8rpx; }
+.ss-preview { border-radius: 20rpx; padding: 32rpx 24rpx; text-align: center; position: relative; overflow: hidden; min-height: 360rpx; }
+.ss-emoji { font-size: 56rpx; display: block; margin-bottom: 6rpx; }
+.ss-dest { font-size: 34rpx; font-weight: 700; color: #2C2422; display: block; }
+.ss-msg { margin: 16rpx 0 12rpx; padding: 14rpx 18rpx; background: rgba(255,255,255,0.6); border-radius: 14rpx; position: relative; }
+.ss-qt { position: absolute; top: 6rpx; left: 12rpx; font-size: 36rpx; color: #C4817A; opacity: 0.3; line-height: 1; }
+.ss-inp { font-size: 26rpx; color: #2C2422; text-align: center; width: 100%; background: transparent; border: none; min-height: 60rpx; }
+.ss-badges { display: flex; gap: 10rpx; justify-content: center; flex-wrap: wrap; }
+.ss-badge { padding: 4rpx 20rpx; border-radius: 20rpx; font-size: 22rpx; font-weight: 500; }
+.ss-credit { display: block; margin-top: 16rpx; font-size: 20rpx; color: #8A7A76; opacity: 0.5; letter-spacing: 2rpx; }
+.ss-actions { display: flex; gap: 14rpx; margin-top: 20rpx; }
+.ss-btn { flex: 1; padding: 22rpx; border: none; border-radius: 40rpx; font-size: 26rpx; font-weight: 600; text-align: center; }
+.ss-save { background: linear-gradient(135deg,#C4817A,#9A5E58); color: #fff; }
+.ss-wx { background: #07C160; color: #fff; }
+
+/* comments */
+.cmt-list { margin-bottom: 16rpx; }
+.cmt-empty { text-align: center; padding: 40rpx 0; font-size: 24rpx; color: #8A7A76; }
+.cmt-item { display: flex; gap: 14rpx; padding: 16rpx 0; border-bottom: 1rpx solid rgba(196,129,122,0.06); }
+.cmt-item:last-child { border: none; }
+.cmt-av { width: 48rpx; height: 48rpx; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22rpx; font-weight: 700; }
+.cmt-bd { flex: 1; min-width: 0; }
+.cmt-hd { display: flex; align-items: center; gap: 8rpx; flex-wrap: wrap; margin-bottom: 4rpx; }
+.cmt-n { font-size: 24rpx; font-weight: 600; color: #2C2422; }
+.cmt-s { font-size: 18rpx; color: #F5A623; }
+.cmt-t { font-size: 20rpx; color: #8A7A76; margin-left: auto; }
+.cmt-tx { font-size: 24rpx; color: #5C4A46; line-height: 1.6; }
+
+.cmt-input-sec { padding: 20rpx; background: rgba(255,255,255,0.5); border-radius: 16rpx; }
+.cmt-il { font-size: 24rpx; font-weight: 600; color: #2C2422; display: block; margin-bottom: 6rpx; }
+.cmt-stars { display: flex; align-items: center; gap: 4rpx; margin-bottom: 10rpx; }
+.cmt-stars text { font-size: 36rpx; color: #ddd; }
+.cmt-stars .act { color: #F5A623; }
+.cmt-sl { font-size: 22rpx; color: #8A7A76; margin-left: 8rpx; }
+.cmt-row { display: flex; gap: 10rpx; }
+.cmt-inp { flex: 1; padding: 16rpx 20rpx; background: rgba(255,255,255,0.8); border: 1rpx solid rgba(196,129,122,0.1); border-radius: 24rpx; font-size: 24rpx; }
+.cmt-bt { padding: 16rpx 32rpx; background: linear-gradient(135deg,#C4817A,#9A5E58); color: #fff; border: none; border-radius: 30rpx; font-size: 24rpx; font-weight: 600; flex-shrink: 0; }
+.cmt-bt[disabled] { opacity: 0.4; }
 </style>

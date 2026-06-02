@@ -40,26 +40,42 @@ function initSchema() {
     CREATE TABLE IF NOT EXISTS itineraries (
       id TEXT PRIMARY KEY, destination_id TEXT NOT NULL,
       day_number INTEGER NOT NULL, title TEXT,
-      morning TEXT, afternoon TEXT, evening TEXT, meals TEXT
+      morning TEXT, afternoon TEXT, evening TEXT, meals TEXT,
+      updated_at TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS tips (
       id TEXT PRIMARY KEY, destination_id TEXT NOT NULL,
-      content TEXT NOT NULL, sort_order INTEGER DEFAULT 0
+      content TEXT NOT NULL, sort_order INTEGER DEFAULT 0,
+      updated_at TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS budgets (
       id TEXT PRIMARY KEY, destination_id TEXT NOT NULL,
-      category TEXT NOT NULL, amount INTEGER DEFAULT 0
+      category TEXT NOT NULL, amount INTEGER DEFAULT 0,
+      updated_at TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS user_favorites (
       id TEXT PRIMARY KEY, openid TEXT NOT NULL,
       destination_id TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
       UNIQUE (openid, destination_id)
     );
     CREATE TABLE IF NOT EXISTS user_history (
       id TEXT PRIMARY KEY, openid TEXT NOT NULL,
       destination_id TEXT NOT NULL, viewed_at TEXT DEFAULT (datetime('now'))
     );
+    CREATE TABLE IF NOT EXISTS comments (
+      id TEXT PRIMARY KEY, destination_id TEXT NOT NULL,
+      openid TEXT NOT NULL, nickname TEXT DEFAULT '匿名',
+      avatar_color TEXT DEFAULT '#C4817A',
+      rating INTEGER DEFAULT 5, content TEXT NOT NULL,
+      parent_id TEXT, created_at TEXT DEFAULT (datetime('now'))
+    );
   `)
+  // migrate existing tables (safe to re-run)
+  try { db.exec('ALTER TABLE itineraries ADD COLUMN updated_at TEXT DEFAULT (datetime(\'now\'))') } catch {}
+  try { db.exec('ALTER TABLE tips ADD COLUMN updated_at TEXT DEFAULT (datetime(\'now\'))') } catch {}
+  try { db.exec('ALTER TABLE budgets ADD COLUMN updated_at TEXT DEFAULT (datetime(\'now\'))') } catch {}
+  try { db.exec('ALTER TABLE user_favorites ADD COLUMN created_at TEXT DEFAULT (datetime(\'now\'))') } catch {}
 }
 
 export function seedData() {
