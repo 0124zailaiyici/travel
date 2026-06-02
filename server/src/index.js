@@ -2,6 +2,8 @@ import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import { getDb, seedData } from './models/db.js'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import themesRouter from './routes/themes.js'
 import destinationsRouter from './routes/destinations.js'
 import usersRouter from './routes/users.js'
@@ -21,6 +23,9 @@ app.use('/api/themes', themesRouter)
 app.use('/api/destinations', destinationsRouter)
 app.use('/api/users', usersRouter)
 app.use('/api/comments', commentsRouter)
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')))
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() })

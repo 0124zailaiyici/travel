@@ -76,6 +76,7 @@ function initSchema() {
   try { db.exec('ALTER TABLE tips ADD COLUMN updated_at TEXT DEFAULT (datetime(\'now\'))') } catch {}
   try { db.exec('ALTER TABLE budgets ADD COLUMN updated_at TEXT DEFAULT (datetime(\'now\'))') } catch {}
   try { db.exec('ALTER TABLE user_favorites ADD COLUMN created_at TEXT DEFAULT (datetime(\'now\'))') } catch {}
+  try { db.exec('ALTER TABLE comments ADD COLUMN image_url TEXT') } catch {}
 }
 
 export function seedData() {

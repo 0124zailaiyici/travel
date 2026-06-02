@@ -165,6 +165,7 @@
                 </view>
                 <text class="cmt-tx" v-if="c.parent_id" style="font-size:20rpx;color:#8A7A76;">回复</text>
                 <text class="cmt-tx">{{ c.content }}</text>
+                <image class="cmt-img" :src="c.image_url" mode="aspectFill" v-if="c.image_url" @tap="previewImg(c.image_url)" />
                 <view class="cmt-acts">
                   <text class="cmt-act" @tap="startReply(c)">回复</text>
                   <text class="cmt-act cmt-del" v-if="c.openid === uid" @tap="deleteComment(c.id)">删除</text>
@@ -195,7 +196,12 @@
         <text class="ci-bar-cr" @tap="replyingTo = null">取消</text>
       </view>
       <textarea class="ci-bar-inp" v-model="cmtText" placeholder="分享你的旅行体验…" auto-height></textarea>
+      <view class="ci-bar-img" v-if="cmtImage">
+        <image class="ci-img-pre" :src="cmtImage" mode="aspectFill" />
+        <text class="ci-img-del" @tap="cmtImage = ''">✕</text>
+      </view>
       <view class="ci-bar-act">
+        <text class="ci-bar-cam" @tap="pickImage">📷</text>
         <button class="ci-bar-bt" @tap="submitComment">发布</button>
       </view>
     </view>
@@ -236,6 +242,8 @@ import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { api } from '../../api/index.js'
 import { getLocation } from '../../api/location.js'
 import { getUserId } from '../../api/user.js'
+import { API_BASE } from '../../config.js'
+const BASE = API_BASE + '/api'
 
 const detail = ref({}); const isFav = ref(false)
 const expandedDays = ref([])
@@ -257,6 +265,7 @@ const cmtTotal = ref(0)
 const cmtLoadingMore = ref(false)
 const cmtText = ref('')
 const cmtRating = ref(0)
+const cmtImage = ref('')
 const replyingTo = ref(null)
 const uid = getUserId()
 
@@ -296,10 +305,32 @@ function timeAgo(t) {
   return d.toLocaleDateString('zh-CN')
 }
 
+function pickImage() {
+  wx.chooseImage({ count: 1, sizeType: ['compressed'], sourceType: ['album', 'camera'],
+    success: (res) => { cmtImage.value = res.tempFilePaths[0] }
+  })
+}
+
+function previewImg(url) {
+  wx.previewImage({ urls: [url], current: url })
+}
+
 async function submitComment() {
   const txt = cmtText.value.trim()
   if (!txt) { uni.showToast({ title: '请写点内容', icon: 'none' }); return }
   try {
+    let image_url = ''
+    if (cmtImage.value) {
+      uni.showLoading({ title: '上传中…' })
+      const res = await uni.uploadFile({
+        url: BASE + '/comments/upload',
+        filePath: cmtImage.value,
+        name: 'image'
+      })
+      const data = JSON.parse(res.data || '{}')
+      image_url = data.url || ''
+      uni.hideLoading()
+    }
     const data = {
       destination_id: detail.value.id,
       openid: uid,
@@ -307,14 +338,17 @@ async function submitComment() {
       rating: cmtRating.value || null,
       content: txt
     }
+    if (image_url) data.image_url = image_url
     if (replyingTo.value) data.parent_id = replyingTo.value.id
     await api.postComment(data)
     cmtText.value = ''
     cmtRating.value = 0
+    cmtImage.value = ''
     replyingTo.value = null
     uni.showToast({ title: '评价成功', icon: 'none' })
     loadComments()
   } catch(e) {
+    uni.hideLoading()
     uni.showToast({ title: '发布失败', icon: 'none' })
   }
 }
@@ -716,6 +750,12 @@ async function saveImage(canvasNode, mode) {
 .ci-bar-reply { display: flex; align-items: center; gap: 10rpx; margin-bottom: 8rpx; padding: 8rpx 14rpx; background: rgba(196,129,122,0.06); border-radius: 12rpx; font-size: 22rpx; }
 .ci-bar-rp { flex: 1; color: #C4817A; }
 .ci-bar-cr { color: #8A7A76; flex-shrink: 0; }
-.ci-bar-act { margin-top: 10rpx; text-align: right; }
+.ci-bar-img { position: relative; margin-top: 10rpx; width: 120rpx; height: 120rpx; }
+.ci-img-pre { width: 100%; height: 100%; border-radius: 12rpx; }
+.ci-img-del { position: absolute; top: -8rpx; right: -8rpx; width: 32rpx; height: 32rpx; border-radius: 50%; background: rgba(0,0,0,0.5); color: #fff; font-size: 20rpx; display: flex; align-items: center; justify-content: center; }
+.ci-bar-act { margin-top: 10rpx; display: flex; align-items: center; justify-content: flex-end; gap: 16rpx; }
+.ci-bar-cam { font-size: 40rpx; padding: 8rpx; }
 .ci-bar-bt { padding: 16rpx 40rpx; background: linear-gradient(135deg,#C4817A,#A55A52); color: #fff; border: none; border-radius: 30rpx; font-size: 28rpx; font-weight: 600; display: inline-block; }
+
+.cmt-img { width: 180rpx; height: 180rpx; border-radius: 12rpx; margin-top: 8rpx; }
 </style>
