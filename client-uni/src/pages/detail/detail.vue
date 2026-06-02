@@ -1,6 +1,6 @@
 <template>
   <view class="dp">
-    <scroll-view scroll-y class="dp-scroll">
+    <view class="dp-scroll">
       <view class="shim" v-if="!detail.name">
         <view class="shim-hero"></view>
         <view class="shim-card"><view class="s-l w60"></view><view class="s-l w40"></view><view class="s-l w80"></view></view>
@@ -165,7 +165,7 @@
                 </view>
                 <text class="cmt-tx" v-if="c.parent_id" style="font-size:20rpx;color:#8A7A76;">回复 @{{ findParentName(c.parent_id) }}</text>
                 <text class="cmt-tx">{{ c.content }}</text>
-                <view class="cmt-img" v-if="c.image_url" @tap="previewImg(fullImgUrl(c.image_url))"><text>📷</text></view>
+                <image class="cmt-img" :src="fullImgUrl(c.image_url)" mode="aspectFill" v-if="c.image_url" @tap="previewImg(fullImgUrl(c.image_url))" />
                 <view class="cmt-acts">
                   <text class="cmt-act" @tap="startReply(c)">回复</text>
                   <text class="cmt-act cmt-del" v-if="c.openid === uid" @tap="deleteComment(c.id)">删除</text>
@@ -179,7 +179,7 @@
           <button class="nav-bt" @tap="navigate">📍 导航去</button>
         </view>
       </template>
-    </scroll-view>
+    </view>
 
     <!-- === FIXED COMMENT INPUT BAR === -->
     <view class="ci-bar" v-if="detail.name">
@@ -260,6 +260,7 @@ watch(showShareSheet, (v) => { if (v && detail.value.id) pickShareBg() })
 
 // comments
 const comments = ref([])
+const commentNames = ref({})
 const loadingComments = ref(false)
 const cmtPage = ref(1)
 const cmtTotal = ref(0)
@@ -284,6 +285,9 @@ async function loadComments(page) {
     const res = await api.getComments(detail.value.id, page || 1)
     if (page === 1 || !page) comments.value = res.list
     else comments.value = comments.value.concat(res.list)
+    const m = {}
+    comments.value.forEach(c => { m[c.id] = c.nickname })
+    commentNames.value = m
     cmtTotal.value = res.total
     cmtPage.value = page || 1
   } catch(e) { console.error(e) }
@@ -301,10 +305,7 @@ function fullImgUrl(url) {
   return API_BASE + url
 }
 
-function findParentName(parentId) {
-  const p = comments.value.find(c => c.id === parentId)
-  return p ? p.nickname : '已删除'
-}
+function findParentName(parentId) { return commentNames.value[parentId] || '已删除' }
 
 function timeAgo(t) {
   if (!t) return ''
@@ -612,7 +613,7 @@ async function saveImage(canvasNode, mode) {
 <style>
 .dp { height: 100vh; background: #FDF8F4; display: flex; flex-direction: column; }
 
-.dp-scroll { flex: 1; }
+.dp-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 /* shimmer */
 .shim { padding: 0 24rpx; }
 .shim-hero { height: 420rpx; border-radius: 0 0 24rpx 24rpx; background: linear-gradient(90deg,#f0e8e4 25%,#e8ddd8 50%,#f0e8e4 75%); background-size:200% 100%; animation: sh 1.5s infinite; }
@@ -770,5 +771,5 @@ async function saveImage(canvasNode, mode) {
 .ci-bar-cam { font-size: 40rpx; padding: 8rpx; flex-shrink: 0; }
 .ci-bar-bt { padding: 16rpx 40rpx; background: linear-gradient(135deg,#C4817A,#A55A52); color: #fff; border: none; border-radius: 30rpx; font-size: 28rpx; font-weight: 600; flex-shrink: 0; }
 
-.cmt-img { width: 80rpx; height: 80rpx; border-radius: 12rpx; margin-top: 8rpx; background: linear-gradient(135deg,#f0e8e4,#e8ddd8); display: flex; align-items: center; justify-content: center; font-size: 32rpx; }
+.cmt-img { width: 180rpx; height: 180rpx; border-radius: 12rpx; margin-top: 8rpx; }
 </style>
