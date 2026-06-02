@@ -5,9 +5,12 @@ function request(url, data = {}, method = 'GET') {
   return new Promise((resolve, reject) => {
     uni.request({
       url: BASE + url,
-      data, method,
+      data, method, timeout: 10000,
       success: (res) => resolve(res.data),
-      fail: reject
+      fail: () => {
+        uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+        reject(new Error('request fail'))
+      }
     })
   })
 }
@@ -31,7 +34,7 @@ export const api = {
   syncGetFavs: (uid) => request('/users/favorites', { openid: uid }),
   syncToggleFav: (uid, destId) => request('/users/favorites', { openid: uid, destination_id: destId }, 'POST'),
   // comments
-  getComments: (destId) => request(`/comments/${destId}`),
+  getComments: (destId, page) => request(`/comments/${destId}`, { page: page || 1 }),
   postComment: (data) => request('/comments', data, 'POST'),
   deleteComment: (id, openid) => request(`/comments/${id}?openid=${openid}`, {}, 'DELETE')
 }

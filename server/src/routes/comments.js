@@ -14,11 +14,15 @@ function pickColor(name) {
 
 router.get('/:id', (req, res) => {
   const db = getDb()
+  const page = Math.max(parseInt(req.query.page) || 1, 1)
+  const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 50)
+  const offset = (page - 1) * limit
+  const total = db.prepare('SELECT COUNT(*) as c FROM comments WHERE destination_id = ?').get(req.params.id).c
   const comments = db.prepare(`
     SELECT id, openid, nickname, avatar_color, rating, content, parent_id, created_at
-    FROM comments WHERE destination_id = ? ORDER BY created_at DESC LIMIT 50
-  `).all(req.params.id)
-  res.json(comments.map(c => ({ ...c })))
+    FROM comments WHERE destination_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?
+  `).all(req.params.id, limit, offset)
+  res.json({ list: comments.map(c => ({ ...c })), total, page, limit })
 })
 
 router.post('/', (req, res) => {

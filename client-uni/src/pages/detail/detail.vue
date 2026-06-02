@@ -149,7 +149,10 @@
 
         <!-- === COMMENTS === -->
         <view class="sec" v-if="comments.length || !loadingComments">
-          <view class="sec-hd"><text class="sec-tt">💬 评价 ({{ comments.length }})</text></view>
+          <view class="sec-hd">
+            <text class="sec-tt">💬 评价 <text v-if="cmtTotal" style="font-weight:400;font-size:24rpx;color:#8A7A76;">({{ cmtTotal }})</text></text>
+            <text class="sec-toggle" v-if="cmtTotal > 10 && comments.length < cmtTotal" @tap="loadMoreComments">{{ cmtLoadingMore ? '加载中…' : '查看更多' }}</text>
+          </view>
           <view class="cmt-list">
             <view class="cmt-empty" v-if="!comments.length && !loadingComments">暂无评价，来当第一个分享的人吧</view>
             <view class="cmt-item" v-for="c in comments" :key="c.id">
@@ -249,6 +252,9 @@ watch(showShareSheet, (v) => { if (v && detail.value.id) pickShareBg() })
 // comments
 const comments = ref([])
 const loadingComments = ref(false)
+const cmtPage = ref(1)
+const cmtTotal = ref(0)
+const cmtLoadingMore = ref(false)
 const cmtText = ref('')
 const cmtRating = ref(0)
 const replyingTo = ref(null)
@@ -260,6 +266,25 @@ function startReply(c) {
   cmtRating.value = 0
 }
 
+async function loadComments(page) {
+  if (!detail.value.id) return
+  if (page === 1) loadingComments.value = true
+  else cmtLoadingMore.value = true
+  try {
+    const res = await api.getComments(detail.value.id, page || 1)
+    if (page === 1 || !page) comments.value = res.list
+    else comments.value = comments.value.concat(res.list)
+    cmtTotal.value = res.total
+    cmtPage.value = page || 1
+  } catch(e) { console.error(e) }
+  finally { loadingComments.value = false; cmtLoadingMore.value = false }
+}
+
+function loadMoreComments() {
+  if (cmtLoadingMore.value || comments.value.length >= cmtTotal.value) return
+  loadComments(cmtPage.value + 1)
+}
+
 function timeAgo(t) {
   if (!t) return ''
   const d = new Date(t + (t.includes('Z') ? '' : 'Z'))
@@ -269,14 +294,6 @@ function timeAgo(t) {
   if (s < 86400) return Math.floor(s / 3600) + '小时前'
   if (s < 2592000) return Math.floor(s / 86400) + '天前'
   return d.toLocaleDateString('zh-CN')
-}
-
-async function loadComments() {
-  if (!detail.value.id) return
-  loadingComments.value = true
-  try { comments.value = await api.getComments(detail.value.id) }
-  catch(e) { console.error(e) }
-  finally { loadingComments.value = false }
 }
 
 async function submitComment() {
@@ -401,6 +418,7 @@ function navigate() {
 }
 
 async function genShareImage(mode) {
+  uni.showLoading({ title: '生成中…', mask: true })
   const d = detail.value
   const msg = shareMsg.value.trim() || '推荐这个好地方！'
   const uid = getUserId()
@@ -483,11 +501,14 @@ async function genShareImage(mode) {
       ctx.fillStyle = 'rgba(138,122,118,0.5)'
       ctx.fillText('—— 来自「花期」的推荐 打开小程序查看完整攻略 ——', W / 2, 600)
 
+      uni.hideLoading()
       saveImage(canvasNode, mode)
     } else {
+      uni.hideLoading()
       saveFallback(mode)
     }
   } catch(e) {
+    uni.hideLoading()
     console.error(e)
     saveFallback(mode)
   }
