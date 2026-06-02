@@ -39,9 +39,8 @@ router.post('/', (req, res) => {
   let finalUrl = image_url || null
   if (image_data) {
     try {
-      const ext = image_data.startsWith('/') ? 'png' : 'jpg'
       const buf = Buffer.from(image_data, 'base64')
-      const fn = `${uuid()}.${ext}`
+      const fn = `${uuid()}.jpg`
       fs.writeFileSync(path.join(UPLOAD_DIR, fn), buf)
       finalUrl = `/uploads/${fn}`
     } catch(e) {
