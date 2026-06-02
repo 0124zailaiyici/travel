@@ -155,22 +155,11 @@
               <view class="cmt-bd">
                 <view class="cmt-hd">
                   <text class="cmt-n">{{ c.nickname }}</text>
-                  <text class="cmt-s" v-if="c.rating">{{ '⭐'.repeat(c.rating) }}</text>
+                  <text class="cmt-s" v-if="c.rating">{{ '★'.repeat(c.rating) + '☆'.repeat(5-c.rating) }}</text>
                   <text class="cmt-t">{{ timeAgo(c.created_at) }}</text>
                 </view>
                 <text class="cmt-tx">{{ c.content }}</text>
               </view>
-            </view>
-          </view>
-          <view class="cmt-input-sec">
-            <text class="cmt-il">发表评价</text>
-            <view class="cmt-stars">
-              <text v-for="i in 5" :key="i" :class="{ act: i <= cmtRating }" @tap="cmtRating = i">★</text>
-              <text class="cmt-sl" v-if="cmtRating">{{ ['','很差','较差','一般','不错','很好'][cmtRating] }}</text>
-            </view>
-            <view class="cmt-row">
-              <input class="cmt-inp" v-model="cmtText" placeholder="分享你的旅行体验…" />
-              <button class="cmt-bt" @tap="submitComment" :disabled="!cmtText.trim()">发布</button>
             </view>
           </view>
         </view>
@@ -180,6 +169,22 @@
         </view>
       </template>
     </scroll-view>
+
+    <!-- === FIXED COMMENT INPUT BAR === -->
+    <view class="ci-bar" v-if="detail.name">
+      <view class="ci-bar-hd">
+        <text class="ci-bar-tt">✏️ 写评价</text>
+        <view class="ci-bar-stars">
+          <text v-for="i in 5" :key="i" :class="{ act: i <= cmtRating }" @tap="cmtRating = i">★</text>
+          <text class="ci-bar-sl" v-if="cmtRating">{{ ['','很差','较差','一般','不错','很好'][cmtRating] }}</text>
+          <text class="ci-bar-sl" v-else>请评分</text>
+        </view>
+      </view>
+      <view class="ci-bar-row">
+        <textarea class="ci-bar-inp" v-model="cmtText" placeholder="分享你的旅行体验…" auto-height></textarea>
+        <button class="ci-bar-bt" @tap="submitComment" :disabled="!cmtText.trim() || !cmtRating">发布</button>
+      </view>
+    </view>
 
     <!-- share sheet -->
     <view class="ss-overlay" v-if="showShareSheet" @tap="showShareSheet = false"></view>
@@ -234,7 +239,7 @@ watch(showShareSheet, (v) => { if (v && detail.value.id) pickShareBg() })
 const comments = ref([])
 const loadingComments = ref(false)
 const cmtText = ref('')
-const cmtRating = ref(5)
+const cmtRating = ref(0)
 
 function timeAgo(t) {
   if (!t) return ''
@@ -267,7 +272,7 @@ async function submitComment() {
       content: txt
     })
     cmtText.value = ''
-    cmtRating.value = 5
+    cmtRating.value = 0
     uni.showToast({ title: '评价成功', icon: 'none' })
     loadComments()
   } catch(e) {
@@ -507,9 +512,9 @@ async function saveImage(canvasNode, mode) {
 </script>
 
 <style>
-.dp { height: 100vh; background: #FDF8F4; }
-.dp-scroll { height: 100%; padding-bottom: 100rpx; }
+.dp { height: 100vh; background: #FDF8F4; display: flex; flex-direction: column; }
 
+.dp-scroll { flex: 1; }
 /* shimmer */
 .shim { padding: 0 24rpx; }
 .shim-hero { height: 420rpx; border-radius: 0 0 24rpx 24rpx; background: linear-gradient(90deg,#f0e8e4 25%,#e8ddd8 50%,#f0e8e4 75%); background-size:200% 100%; animation: sh 1.5s infinite; }
@@ -641,18 +646,19 @@ async function saveImage(canvasNode, mode) {
 .cmt-bd { flex: 1; min-width: 0; }
 .cmt-hd { display: flex; align-items: center; gap: 8rpx; flex-wrap: wrap; margin-bottom: 4rpx; }
 .cmt-n { font-size: 24rpx; font-weight: 600; color: #2C2422; }
-.cmt-s { font-size: 18rpx; color: #F5A623; }
+.cmt-s { font-size: 22rpx; color: #F5A623; letter-spacing: 2rpx; }
 .cmt-t { font-size: 20rpx; color: #8A7A76; margin-left: auto; }
 .cmt-tx { font-size: 24rpx; color: #5C4A46; line-height: 1.6; }
 
-.cmt-input-sec { padding: 20rpx; background: rgba(255,255,255,0.5); border-radius: 16rpx; }
-.cmt-il { font-size: 24rpx; font-weight: 600; color: #2C2422; display: block; margin-bottom: 6rpx; }
-.cmt-stars { display: flex; align-items: center; gap: 4rpx; margin-bottom: 10rpx; }
-.cmt-stars text { font-size: 36rpx; color: #ddd; }
-.cmt-stars .act { color: #F5A623; }
-.cmt-sl { font-size: 22rpx; color: #8A7A76; margin-left: 8rpx; }
-.cmt-row { display: flex; gap: 10rpx; }
-.cmt-inp { flex: 1; padding: 16rpx 20rpx; background: rgba(255,255,255,0.8); border: 1rpx solid rgba(196,129,122,0.1); border-radius: 24rpx; font-size: 24rpx; }
-.cmt-bt { padding: 16rpx 32rpx; background: linear-gradient(135deg,#C4817A,#9A5E58); color: #fff; border: none; border-radius: 30rpx; font-size: 24rpx; font-weight: 600; flex-shrink: 0; }
-.cmt-bt[disabled] { opacity: 0.4; }
+.ci-bar { padding: 14rpx 20rpx; background: #fff; border-top: 1rpx solid rgba(196,129,122,0.08); flex-shrink: 0; }
+.ci-bar-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10rpx; }
+.ci-bar-tt { font-size: 26rpx; font-weight: 700; }
+.ci-bar-stars { display: flex; align-items: center; gap: 2rpx; }
+.ci-bar-stars text { font-size: 36rpx; color: #ddd; padding: 6rpx 4rpx; }
+.ci-bar-stars .act { color: #F5A623; }
+.ci-bar-sl { font-size: 22rpx; color: #8A7A76; margin-left: 6rpx; font-weight: 500; }
+.ci-bar-row { display: flex; gap: 12rpx; align-items: flex-end; }
+.ci-bar-inp { flex: 1; padding: 18rpx 22rpx; background: #FAF6F2; border: 2rpx solid rgba(196,129,122,0.1); border-radius: 20rpx; font-size: 28rpx; line-height: 1.5; max-height: 160rpx; }
+.ci-bar-bt { padding: 18rpx 36rpx; background: linear-gradient(135deg,#C4817A,#A55A52); color: #fff; border: none; border-radius: 20rpx; font-size: 28rpx; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+.ci-bar-bt[disabled] { opacity: 0.35; }
 </style>
