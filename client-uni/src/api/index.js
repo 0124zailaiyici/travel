@@ -32,5 +32,6 @@ export const api = {
   syncToggleFav: (uid, destId) => request('/users/favorites', { openid: uid, destination_id: destId }, 'POST'),
   // comments
   getComments: (destId) => request(`/comments/${destId}`),
-  postComment: (data) => request('/comments', data, 'POST')
+  postComment: (data) => request('/comments', data, 'POST'),
+  deleteComment: (id, openid) => request(`/comments/${id}?openid=${openid}`, {}, 'DELETE')
 }

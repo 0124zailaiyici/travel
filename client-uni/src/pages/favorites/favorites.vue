@@ -13,9 +13,9 @@
     </view>
     <view class="fp-list" v-if="list.length">
       <view class="fp-card" v-for="d in list" :key="d.id" @tap="goDetail(d.id)">
-        <image class="fp-img" :src="d.image_url" mode="aspectFill" lazy-load @error="d.imgErr = true" v-if="!d.imgErr"></image>
-        <view class="fp-img" v-else :style="'background:' + (bgList[parseInt(d.id?.replace('d','')||'0') % bgList.length])">
-          <text class="fp-em">{{ d.themeIcon || '🌸' }}</text>
+        <view class="fp-img">
+          <image class="fi-i" :src="d.image_url" mode="aspectFill" lazy-load v-if="d.image_url" />
+          <text class="fi-fb" v-else>{{ d.themeIcon || '🌸' }}</text>
         </view>
         <view class="fp-body">
           <text class="fp-name">{{ d.name }}</text>
@@ -37,7 +37,6 @@ import { getUserId } from '../../api/user.js'
 
 const list = ref([])
 const loading = ref(true)
-const bgList = ['linear-gradient(135deg,#E8B4AE,#C4817A)','linear-gradient(135deg,#8BA88A,#5B7B5A)','linear-gradient(135deg,#E8C4A0,#C4817A)','linear-gradient(135deg,#C4817A,#5B7B5A)','linear-gradient(135deg,#F0D5C0,#E8B4AE)']
 
 onMounted(async () => {
   try {
@@ -65,8 +64,9 @@ function goDetail(id) { uni.navigateTo({ url: `/pages/detail/detail?id=${id}` })
 .fp-e-sub { font-size: 24rpx; color: #C4817A; margin-top: 8rpx; display: block; }
 .fp-list { display: flex; flex-direction: column; gap: 16rpx; }
 .fp-card { display: flex; background: rgba(255,255,255,0.88); border-radius: 20rpx; overflow: hidden; box-shadow: 0 2rpx 14rpx rgba(196,129,122,0.06); }
-.fp-img { width: 160rpx; height: 160rpx; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #f0e8e4; }
-.fp-em { font-size: 48rpx; }
+.fp-img { width: 160rpx; height: 160rpx; flex-shrink: 0; position: relative; overflow: hidden; background: linear-gradient(135deg,#C4817A,#9A5E58); display: flex; align-items: center; justify-content: center; }
+.fi-i { width: 100%; height: 100%; }
+.fi-fb { font-size: 48rpx; }
 .fp-body { flex: 1; padding: 14rpx 18rpx; display: flex; flex-direction: column; }
 .fp-name { font-size: 28rpx; font-weight: 600; color: #2C2422; }
 .fp-desc { font-size: 22rpx; color: #8A7A76; margin: 4rpx 0; line-height: 1.5; word-break: break-all; max-height: 99rpx; overflow: hidden; }

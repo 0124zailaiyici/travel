@@ -31,17 +31,19 @@ router.post('/', (req, res) => {
   const id = uuid()
   db.prepare(
     'INSERT INTO comments (id, destination_id, openid, nickname, avatar_color, rating, content, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(id, destination_id, openid, name, pickColor(name), Math.min(Math.max(parseInt(rating) || 5, 1), 5), content.trim(), parent_id || null)
+  ).run(id, destination_id, openid, name, pickColor(name), rating ? Math.min(Math.max(parseInt(rating), 1), 5) : null, content.trim(), parent_id || null)
   res.json({ success: true, id })
 })
 
 router.delete('/:id', (req, res) => {
-  const { openid } = req.body
+  const { openid } = req.query || req.body
   const db = getDb()
   const row = db.prepare('SELECT openid FROM comments WHERE id = ?').get(req.params.id)
   if (!row) return res.status(404).json({ error: '评论不存在' })
   if (row.openid !== openid) return res.status(403).json({ error: '无权删除' })
   db.prepare('DELETE FROM comments WHERE id = ?').run(req.params.id)
+  // also delete replies
+  db.prepare('DELETE FROM comments WHERE parent_id = ?').run(req.params.id)
   res.json({ success: true })
 })
 

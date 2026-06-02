@@ -84,8 +84,10 @@
     <!-- result list -->
     <view class="sp-list" v-if="!loading && searched">
       <view class="rs-card" v-for="d in displayList" :key="d.id" @tap="goDetail(d.id)">
-        <image class="rs-img" :src="d.image_url" mode="aspectFill" lazy-load @error="d.imgErr = true" v-if="!d.imgErr"></image>
-        <view class="rs-fb" v-if="d.imgErr">{{ d.icon || '🌸' }}</view>
+        <view class="rs-img">
+          <image class="ri-i" :src="d.image_url" mode="aspectFill" lazy-load v-if="d.image_url" />
+          <text class="ri-fb" v-else>{{ d.icon || '🌸' }}</text>
+        </view>
         <view class="rs-body">
           <view class="rs-top">
             <view class="rs-name">{{ d.name }}</view>
@@ -302,8 +304,9 @@ function goBack() { uni.navigateBack() }
 
 .sp-list { padding: 0 20rpx 40rpx; display: flex; flex-direction: column; gap: 16rpx; }
 .rs-card { display: flex; background: rgba(255,255,255,0.88); border-radius: 20rpx; overflow: hidden; box-shadow: 0 2rpx 14rpx rgba(196,129,122,0.06); position: relative; }
-.rs-img { width: 200rpx; height: 200rpx; flex-shrink: 0; background: #f0e8e4; }
-.rs-fb { position: absolute; left: 0; top: 0; width: 200rpx; height: 200rpx; display: flex; align-items: center; justify-content: center; font-size: 48rpx; background: linear-gradient(135deg,#E8B4AE,#C4817A); }
+.rs-img { width: 200rpx; height: 200rpx; flex-shrink: 0; position: relative; overflow: hidden; background: linear-gradient(135deg,#E8B4AE,#C4817A); display: flex; align-items: center; justify-content: center; }
+.ri-i { width: 100%; height: 100%; }
+.ri-fb { font-size: 48rpx; }
 .rs-body { flex: 1; padding: 16rpx 18rpx; display: flex; flex-direction: column; min-width: 0; }
 .rs-top { display: flex; flex-direction: row; min-width: 0; }
 .rs-name { font-size: 28rpx; font-weight: 600; color: #2C2422; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }

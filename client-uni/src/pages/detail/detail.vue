@@ -15,9 +15,11 @@
       </view>
 
       <template v-if="detail.name">
-        <view class="hero-w" :style="'background:' + bg">
-          <image class="hero-i" :src="detail.image_url" mode="aspectFill" lazy-load @error="imgErr = true" v-if="detail.image_url && !imgErr"></image>
-          <view class="hero-fb"><text class="hero-e">{{ detail.themeIcon || '🌸' }}</text></view>
+        <view class="hero-w">
+          <view class="hi">
+            <image class="hi-i" :src="detail.image_url" mode="aspectFill" lazy-load v-if="detail.image_url" />
+            <text class="hi-fb" v-else>{{ detail.themeIcon || '🌸' }}</text>
+          </view>
           <view class="hero-mask"></view>
           <text class="fav-bt" @tap="toggleFav">{{ isFav ? '❤️' : '🤍' }}</text>
           <view class="hero-info">
@@ -158,7 +160,12 @@
                   <text class="cmt-s" v-if="c.rating">{{ '★'.repeat(c.rating) + '☆'.repeat(5-c.rating) }}</text>
                   <text class="cmt-t">{{ timeAgo(c.created_at) }}</text>
                 </view>
+                <text class="cmt-tx" v-if="c.parent_id" style="font-size:20rpx;color:#8A7A76;">回复</text>
                 <text class="cmt-tx">{{ c.content }}</text>
+                <view class="cmt-acts">
+                  <text class="cmt-act" @tap="startReply(c)">回复</text>
+                  <text class="cmt-act cmt-del" v-if="c.openid === uid" @tap="deleteComment(c.id)">删除</text>
+                </view>
               </view>
             </view>
           </view>
@@ -179,6 +186,10 @@
           <text class="ci-bar-sl" v-if="cmtRating">{{ ['','很差','较差','一般','不错','很好'][cmtRating] }}</text>
           <text class="ci-bar-sl" v-else>请评分</text>
         </view>
+      </view>
+      <view class="ci-bar-reply" v-if="replyingTo">
+        <text class="ci-bar-rp">回复 @{{ replyingTo.nickname }}</text>
+        <text class="ci-bar-cr" @tap="replyingTo = null">取消</text>
       </view>
       <textarea class="ci-bar-inp" v-model="cmtText" placeholder="分享你的旅行体验…" auto-height></textarea>
       <view class="ci-bar-act">
@@ -223,7 +234,7 @@ import { api } from '../../api/index.js'
 import { getLocation } from '../../api/location.js'
 import { getUserId } from '../../api/user.js'
 
-const detail = ref({}); const isFav = ref(false); const imgErr = ref(false)
+const detail = ref({}); const isFav = ref(false)
 const expandedDays = ref([])
 const allDaysExpanded = computed(() => expandedDays.value.every(v => v))
 
@@ -240,6 +251,14 @@ const comments = ref([])
 const loadingComments = ref(false)
 const cmtText = ref('')
 const cmtRating = ref(0)
+const replyingTo = ref(null)
+const uid = getUserId()
+
+function startReply(c) {
+  replyingTo.value = c
+  cmtText.value = ''
+  cmtRating.value = 0
+}
 
 function timeAgo(t) {
   if (!t) return ''
@@ -261,23 +280,37 @@ async function loadComments() {
 }
 
 async function submitComment() {
-  if (!cmtRating.value) { uni.showToast({ title: '请先打分', icon: 'none' }); return }
   const txt = cmtText.value.trim()
   if (!txt) { uni.showToast({ title: '请写点内容', icon: 'none' }); return }
   try {
-    await api.postComment({
+    const data = {
       destination_id: detail.value.id,
-      openid: getUserId(),
-      nickname: '用户_' + getUserId().slice(-4),
-      rating: cmtRating.value,
+      openid: uid,
+      nickname: '用户_' + uid.slice(-4),
+      rating: cmtRating.value || null,
       content: txt
-    })
+    }
+    if (replyingTo.value) data.parent_id = replyingTo.value.id
+    await api.postComment(data)
     cmtText.value = ''
     cmtRating.value = 0
+    replyingTo.value = null
     uni.showToast({ title: '评价成功', icon: 'none' })
     loadComments()
   } catch(e) {
     uni.showToast({ title: '发布失败', icon: 'none' })
+  }
+}
+
+async function deleteComment(id) {
+  const ok = await new Promise(r => uni.showModal({ title:'确认删除', content:'删除后不可恢复', success:(e) => r(e.confirm) }))
+  if (!ok) return
+  try {
+    await api.deleteComment(id, uid)
+    uni.showToast({ title:'已删除', icon:'none' })
+    loadComments()
+  } catch(e) {
+    uni.showToast({ title:'删除失败', icon:'none' })
   }
 }
 
@@ -288,8 +321,6 @@ function toggleAllDays() {
   const target = !allDaysExpanded.value
   expandedDays.value = expandedDays.value.map(() => target)
 }
-const bg = ref('linear-gradient(135deg,#E8B4AE,#C4817A,#9A5E58)')
-const bgs = ['linear-gradient(135deg,#E8B4AE,#C4817A,#9A5E58)','linear-gradient(135deg,#8BA88A,#5B7B5A,#3D5A3C)','linear-gradient(135deg,#E8C4A0,#C4817A,#9A5E58)','linear-gradient(135deg,#C4817A,#5B7B5A,#3D5A3C)','linear-gradient(135deg,#F0D5C0,#E8B4AE,#C4817A)']
 const labels = { transport:'往返交通', accommodation:'住宿', food:'餐饮', tickets:'门票', other:'其他' }
 const icons = { transport:'🚗', accommodation:'🏨', food:'🍜', tickets:'🎫', other:'📦' }
 const barColors = { transport:'linear-gradient(90deg,#5B7B5A,#8BA88A)', accommodation:'linear-gradient(90deg,#9A5E58,#C4817A)', food:'linear-gradient(90deg,#C4917A,#E8B4AE)', tickets:'linear-gradient(90deg,#5B7B8A,#8BA8BA)', other:'linear-gradient(90deg,#9A9A9A,#C0C0C0)' }
@@ -341,7 +372,6 @@ onLoad(async (o) => {
     const favs = await api.syncGetFavs(getUserId())
     isFav.value = favs.some(d => d.id === data.id)
     expandedDays.value = data.itinerary?.map(() => true) || []
-    bg.value = bgs[parseInt(o.id.replace('d','')) % bgs.length]
     loadComments()
   } catch(e) { console.error(e); uni.showToast({ title:'加载失败', icon:'none' }) }
 })
@@ -525,10 +555,10 @@ async function saveImage(canvasNode, mode) {
 @keyframes sh { 0%{background-position:200% 0}100%{background-position:-200% 0} }
 
 /* hero */
-.hero-w { position: relative; height: 420rpx; overflow: hidden; background: #f0e8e4; }
-.hero-i { width: 100%; height: 100%; }
-.hero-fb { position: absolute; top:0;left:0;right:0;bottom:0; display: flex; align-items: flex-end; justify-content: center; }
-.hero-e { font-size: 80rpx; margin-bottom: 80rpx; }
+.hero-w { position: relative; height: 420rpx; overflow: hidden; }
+.hi { width: 100%; height: 100%; background: linear-gradient(135deg,#E8B4AE,#C4817A); display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
+.hi-i { width: 100%; height: 100%; }
+.hi-fb { font-size: 80rpx; margin-bottom: 80rpx; }
 .hero-mask { position: absolute; bottom:0;left:0;right:0; height: 180rpx; background: linear-gradient(transparent,#FDF8F4); }
 .hero-info { position: absolute; bottom: 24rpx; left: 24rpx; right: 24rpx; z-index: 2; }
 .hero-name { font-size: 36rpx; font-weight: 700; color: #fff; text-shadow: 0 2rpx 12rpx rgba(0,0,0,0.3); display: block; margin-bottom: 6rpx; }
@@ -650,6 +680,9 @@ async function saveImage(canvasNode, mode) {
 .cmt-s { font-size: 22rpx; color: #F5A623; letter-spacing: 2rpx; }
 .cmt-t { font-size: 20rpx; color: #8A7A76; margin-left: auto; }
 .cmt-tx { font-size: 24rpx; color: #5C4A46; line-height: 1.6; }
+.cmt-acts { display: flex; gap: 16rpx; margin-top: 6rpx; }
+.cmt-act { font-size: 22rpx; color: #C4817A; }
+.cmt-del { color: #CC6666; }
 
 .ci-bar { padding: 14rpx 20rpx; padding-bottom: calc(14rpx + env(safe-area-inset-bottom)); background: #fff; border-top: 1rpx solid rgba(196,129,122,0.08); flex-shrink: 0; }
 .ci-bar-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10rpx; }
@@ -659,6 +692,9 @@ async function saveImage(canvasNode, mode) {
 .ci-bar-stars .act { color: #F5A623; }
 .ci-bar-sl { font-size: 22rpx; color: #8A7A76; margin-left: 6rpx; font-weight: 500; }
 .ci-bar-inp { display: block; width: 100%; padding: 18rpx 22rpx; background: #FAF6F2; border: 2rpx solid rgba(196,129,122,0.1); border-radius: 20rpx; font-size: 28rpx; line-height: 1.5; max-height: 160rpx; box-sizing: border-box; }
+.ci-bar-reply { display: flex; align-items: center; gap: 10rpx; margin-bottom: 8rpx; padding: 8rpx 14rpx; background: rgba(196,129,122,0.06); border-radius: 12rpx; font-size: 22rpx; }
+.ci-bar-rp { flex: 1; color: #C4817A; }
+.ci-bar-cr { color: #8A7A76; flex-shrink: 0; }
 .ci-bar-act { margin-top: 10rpx; text-align: right; }
 .ci-bar-bt { padding: 16rpx 40rpx; background: linear-gradient(135deg,#C4817A,#A55A52); color: #fff; border: none; border-radius: 30rpx; font-size: 28rpx; font-weight: 600; display: inline-block; }
 </style>

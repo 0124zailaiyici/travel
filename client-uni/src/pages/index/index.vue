@@ -46,8 +46,9 @@
             <view class="sea-desc">{{ d.description }}</view>
             <view class="sea-meta"><text>⭐ {{ d.rating }}</text><text>{{ d.best_season }}</text></view>
           </view>
-          <image class="sea-img" :src="d.image_url" mode="aspectFill" lazy-load v-if="d.image_url"></image>
-          <view class="sea-img" v-else style="display:flex;align-items:center;justify-content:center;font-size:48rpx;background:linear-gradient(135deg,#D4A69E,#B36A5E)">{{ d.icon || '🌸' }}</view>
+          <view class="sea-img" :style="'background:linear-gradient(135deg,#D4A69E,#B36A5E)'">
+            <image class="si-i" :src="d.image_url" mode="aspectFill" lazy-load />
+          </view>
         </view>
       </view>
     </view>
@@ -58,8 +59,10 @@
       </view>
       <view class="nearby-list" v-if="nearby.length">
         <view class="nb-card" v-for="d in nearby" :key="d.id" @tap="goDetail(d.id)">
-          <image class="nb-img" :src="d.image_url" mode="aspectFill" lazy-load v-if="d.image_url"></image>
-          <view class="nb-img" v-else style="display:flex;align-items:center;justify-content:center;font-size:36rpx">{{ d.icon || '🌸' }}</view>
+          <view class="nb-img">
+            <image class="ni-i" :src="d.image_url" mode="aspectFill" lazy-load v-if="d.image_url" />
+            <text class="ni-fb" v-else>{{ d.icon || '🌸' }}</text>
+          </view>
           <view class="nb-body">
             <text class="nb-name">{{ d.name }}</text>
             <view class="nb-desc">{{ d.description || d.address || '' }}</view>
@@ -140,11 +143,14 @@ function goDetail(id) { uni.navigateTo({ url: `/pages/detail/detail?id=${id}` })
 .sea-name { font-size: 26rpx; font-weight: 600; color: #2C2422; margin-bottom: 4rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sea-desc { font-size: 22rpx; color: #8A7A76; line-height: 1.5; word-break: break-all; max-height: 99rpx; overflow: hidden; }
 .sea-meta { display: flex; gap: 14rpx; font-size: 20rpx; color: #8A7A76; margin-top: 6rpx; min-width: 0; }
-.sea-img { width: 160rpx; height: 160rpx; flex-shrink: 0; background: #f0e8e4; }
+.sea-img { width: 160rpx; height: 160rpx; flex-shrink: 0; position: relative; overflow: hidden; }
+.si-i { width: 100%; height: 100%; }
 
 .nearby-list { padding: 0 24rpx; display: flex; flex-direction: column; gap: 16rpx; }
 .nb-card { display: flex; background: rgba(255,255,255,0.88); border-radius: 20rpx; overflow: hidden; box-shadow: 0 2rpx 14rpx rgba(196,129,122,0.06); }
-.nb-img { width: 180rpx; height: 180rpx; flex-shrink: 0; background: #f0e8e4; }
+.nb-img { width: 180rpx; height: 180rpx; flex-shrink: 0; position: relative; overflow: hidden; background: linear-gradient(135deg,#E8B4AE,#C4817A); display: flex; align-items: center; justify-content: center; }
+.ni-i { width: 100%; height: 100%; }
+.ni-fb { font-size: 40rpx; }
 .nb-body { flex: 1; padding: 16rpx 18rpx; display: flex; flex-direction: column; min-width: 0; }
 .nb-name { font-size: 26rpx; font-weight: 600; color: #2C2422; margin-bottom: 4rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nb-desc { font-size: 22rpx; color: #8A7A76; line-height: 1.5; flex: 1; word-break: break-all; max-height: 99rpx; overflow: hidden; }
