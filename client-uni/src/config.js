@@ -1,3 +1,13 @@
-// API 服务器地址 — LAN IP
-// 开发工具和真机都用这个，服务器绑定 0.0.0.0
-export const API_BASE = 'http://192.169.3.14:3002'
+let _apiBase = null
+export function getApiBase() {
+  if (_apiBase) return _apiBase
+  try {
+    const sys = uni.getSystemInfoSync()
+    _apiBase = (sys.platform === 'windows' || sys.platform === 'mac')
+      ? 'http://localhost:3002'
+      : 'http://192.169.3.14:3002'
+  } catch(e) {
+    _apiBase = 'http://192.169.3.14:3002'
+  }
+  return _apiBase
+}

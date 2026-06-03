@@ -165,7 +165,10 @@
                 </view>
                 <text class="cmt-tx" v-if="c.parent_id" style="font-size:20rpx;color:#8A7A76;">回复 @{{ findParentName(c.parent_id) }}</text>
                 <text class="cmt-tx">{{ c.content }}</text>
-                <image class="cmt-img" :src="loadedImgUrls[c.id] || fullImgUrl(c.image_url)" mode="aspectFill" v-if="c.image_url" @tap="previewImg(loadedImgUrls[c.id] || fullImgUrl(c.image_url))" />
+                <template v-if="c.image_url">
+                  <image class="cmt-img" :src="loadedImgUrls[c.id]" mode="aspectFill" v-if="loadedImgUrls[c.id]" @tap="previewImg(loadedImgUrls[c.id])" />
+                  <view class="cmt-img-loading" v-else />
+                </template>
                 <view class="cmt-acts">
                   <text class="cmt-act" @tap="startReply(c)">回复</text>
                   <text class="cmt-act cmt-del" v-if="c.openid === uid" @tap="deleteComment(c.id)">删除</text>
@@ -243,9 +246,7 @@ import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { api } from '../../api/index.js'
 import { getLocation } from '../../api/location.js'
 import { getUserId } from '../../api/user.js'
-import { API_BASE } from '../../config.js'
-const BASE = API_BASE + '/api'
-
+import { getApiBase } from '../../config.js'
 const detail = ref({}); const isFav = ref(false)
 const expandedDays = ref([])
 const allDaysExpanded = computed(() => expandedDays.value.every(v => v))
@@ -317,7 +318,7 @@ function loadCommentImages(list) {
 function fullImgUrl(url) {
   if (!url) return ''
   if (url.startsWith('http') || url.startsWith('data:')) return url
-  return API_BASE + url
+  return getApiBase() + url
 }
 
 function findParentName(parentId) { return commentNames.value[parentId] || '已删除' }
@@ -340,7 +341,7 @@ function pickImage() {
 }
 
 function previewImg(url) {
-  wx.previewImage({ urls: [fullImgUrl(url)], current: fullImgUrl(url) })
+  wx.previewImage({ urls: [url], current: url })
 }
 
 async function submitComment() {
@@ -780,5 +781,6 @@ async function saveImage(canvasNode, mode) {
 .ci-bar-cam { font-size: 40rpx; padding: 8rpx; flex-shrink: 0; }
 .ci-bar-bt { padding: 16rpx 40rpx; background: linear-gradient(135deg,#C4817A,#A55A52); color: #fff; border: none; border-radius: 30rpx; font-size: 28rpx; font-weight: 600; flex-shrink: 0; }
 
-.cmt-img { width: 180rpx; height: 180rpx; border-radius: 12rpx; margin-top: 8rpx; }
+.cmt-img, .cmt-img-loading { width: 180rpx; height: 180rpx; border-radius: 12rpx; margin-top: 8rpx; }
+.cmt-img-loading { background: rgba(255,255,255,.05); }
 </style>
