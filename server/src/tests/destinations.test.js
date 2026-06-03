@@ -9,34 +9,37 @@ describe('Destinations API', () => {
   it('GET /search returns results with keyword', async () => {
     const res = await request.get('/api/destinations/search?q=武汉')
     expect(res.status).toBe(200)
-    expect(res.body.length).toBeGreaterThan(0)
-    expect(res.body[0]).toHaveProperty('name')
-    expect(res.body[0]).toHaveProperty('id')
+    expect(res.body.list.length).toBeGreaterThan(0)
+    expect(res.body.list[0]).toHaveProperty('name')
+    expect(res.body.list[0]).toHaveProperty('id')
+    expect(res.body.total).toBeGreaterThan(0)
+    expect(res.body.page).toBe(1)
   })
 
   it('GET /search returns results without keyword', async () => {
     const res = await request.get('/api/destinations/search')
     expect(res.status).toBe(200)
-    expect(res.body.length).toBeGreaterThan(0)
+    expect(res.body.list.length).toBeGreaterThan(0)
   })
 
   it('GET /search sorts by distance when location provided', async () => {
     const res = await request.get('/api/destinations/search?q=阳朔&lat=25.0&lng=110.0')
     expect(res.status).toBe(200)
-    if (res.body.length > 1) {
-      for (let i = 1; i < res.body.length; i++) {
-        const prev = res.body[i - 1].distance ?? 99999
-        const cur = res.body[i].distance ?? 99999
+    const items = res.body.list
+    if (items.length > 1) {
+      for (let i = 1; i < items.length; i++) {
+        const prev = items[i - 1].distance ?? 99999
+        const cur = items[i].distance ?? 99999
         expect(cur).toBeGreaterThanOrEqual(prev)
       }
     }
   })
 
   it('GET /search sets distance to null when no location', async () => {
-    const res = await request.get('/api/destinations/search?q=阳朔')
+    const res = await request.get('/api/destinations/search?q=黄鹤楼')
     expect(res.status).toBe(200)
-    if (res.body.length > 0) {
-      expect(res.body[0].distance).toBeNull()
+    if (res.body.list.length > 0) {
+      expect(res.body.list[0].distance).toBeNull()
     }
   })
 

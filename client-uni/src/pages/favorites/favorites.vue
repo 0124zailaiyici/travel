@@ -16,7 +16,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { api } from '../../api/index.js'
-import { getUserId } from '../../api/user.js'
+import { getUserId, ensureUserId } from '../../api/user.js'
 import DestCard from '../../components/DestCard.vue'
 import ShimmerCard from '../../components/ShimmerCard.vue'
 
@@ -25,8 +25,9 @@ const loading = ref(true)
 
 onMounted(async () => {
   try {
-    list.value = await api.syncGetFavs(getUserId())
-  } catch(e) { console.error(e) }
+    const realUid = await ensureUserId()
+    list.value = await api.syncGetFavs(realUid || getUserId())
+  } catch(e) { console.error(e); uni.showToast({ title: '加载失败', icon: 'none' }) }
   finally { loading.value = false }
 })
 function goDetail(id) { uni.navigateTo({ url: `/pages/detail/detail?id=${id}` }) }

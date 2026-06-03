@@ -75,7 +75,7 @@ async function load() {
     const loc = await getLocation()
     const [t, n, s] = await Promise.all([api.getHotThemes(), api.getNearby(loc), api.getInSeason()])
     themes.value = t; nearby.value = n; inSeason.value = s
-  } catch(e) { console.error(e) }
+  } catch(e) { console.error(e); uni.showToast({ title: '加载失败，下拉重试', icon: 'none' }) }
 }
 onMounted(() => load())
 onPullDownRefresh(() => load().finally(() => uni.stopPullDownRefresh()))

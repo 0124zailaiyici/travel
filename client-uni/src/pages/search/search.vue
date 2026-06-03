@@ -73,7 +73,7 @@
       </scroll-view>
     </view>
 
-    <text class="sp-count" v-if="!loading && displayList.length">共 <text class="hl">{{ displayList.length }}</text> 个结果</text>
+    <text class="sp-count" v-if="!loading && displayList.length">共 <text class="hl">{{ total }}</text> 个结果</text>
 
     <!-- shimmer -->
     <ShimmerCard v-if="loading" :rows="4" :cols="1" :imgSize="200" :lineCount="3" :lineWidths="['w60','w90','w40']" />
@@ -81,6 +81,10 @@
     <!-- result list -->
     <view class="sp-list" v-if="!loading && searched">
       <DestCard v-for="d in displayList" :key="d.id" :name="d.name" :description="d.description" :rating="d.rating" :bestSeason="null" :distance="d.distance" :duration="d.duration" :imageUrl="d.image_url" :fallbackIcon="d.icon || '🌸'" :tags="d.tags" :showDistance="true" :showTags="true" @tap="goDetail(d.id)" />
+      <view class="sp-more" v-if="displayList.length && hasMore" @tap="loadMore">
+        <text v-if="!loadingMore">加载更多…</text>
+        <text v-else>加载中…</text>
+      </view>
       <view class="sp-empty" v-if="!loading && displayList.length === 0 && searched">
         <text class="e-icon">🔍</text>
         <text class="e-tt">{{ list.length ? '当前距离范围内没有结果' : '没找到相关目的地' }}</text>
@@ -92,10 +96,10 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-import { onLoad, onPullDownRefresh } from '@dcloudio/uni-app'
+import { onLoad, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
 import { api } from '../../api/index.js'
 import { getLocation } from '../../api/location.js'
-import { getUserId } from '../../api/user.js'
+import { getUserId, ensureUserId } from '../../api/user.js'
 import DestCard from '../../components/DestCard.vue'
 import ShimmerCard from '../../components/ShimmerCard.vue'
 
@@ -108,6 +112,11 @@ const loading = ref(false)
 const searched = ref(false)
 const sortBy = ref('distance')
 const showPanel = ref(false)
+const page = ref(1)
+const total = ref(0)
+const hasMore = ref(false)
+const loadingMore = ref(false)
+let lastParams = null
 
 // filters
 const allThemes = ref([])
@@ -162,7 +171,8 @@ function saveHistory(q) {
 onLoad(async (o) => {
   loadHistory()
   browseLoading.value = true
-  api.getHistory(getUserId()).then(r => { browseHistory.value = (r || []).slice(0, 10) }).catch(() => {})
+  const realUid = await ensureUserId()
+  api.getHistory(realUid || getUserId()).then(r => { browseHistory.value = (r || []).slice(0, 10) }).catch(() => {})
     .finally(() => { browseLoading.value = false })
   allThemes.value = await api.getAllThemes()
   if (o.q) { query.value = o.q; doSearch() }
@@ -170,13 +180,18 @@ onLoad(async (o) => {
   else { loadNearby() }
 })
 
+onReachBottom(() => {
+  if (searched.value && hasMore.value && !loadingMore.value) loadMore()
+})
+
 async function loadNearby() {
   try {
     const loc = await getLocation()
     if (loc) {
-      nearbyList.value = await api.searchDestinations({ lat: loc.lat, lng: loc.lng })
+      const res = await api.searchDestinations({ lat: loc.lat, lng: loc.lng })
+      nearbyList.value = res.list || res
     }
-  } catch(e) { console.error(e) }
+  } catch(e) { console.error(e); uni.showToast({ title: '获取附近推荐失败', icon: 'none' }) }
   finally { nbLoaded.value = true }
 }
 
@@ -204,6 +219,7 @@ function onDurationChange(k) { filterDuration.value = k; doSearch() }
 async function doSearch() {
   showPanel.value = false
   searched.value = true
+  page.value = 1
   loading.value = true
   if (query.value.trim()) saveHistory(query.value)
   try {
@@ -212,9 +228,27 @@ async function doSearch() {
     if (filterTheme.value) params.theme = filterTheme.value
     if (filterRating.value) params.minRating = filterRating.value
     if (filterDuration.value) params.maxDuration = filterDuration.value
-    list.value = await api.searchDestinations(params)
-  } catch(e) { console.error(e) }
+    lastParams = params
+    const res = await api.searchDestinations(params, 1)
+    list.value = res.list || []
+    total.value = res.total || res.list?.length || 0
+    hasMore.value = list.value.length < total.value
+  } catch(e) { console.error(e); uni.showToast({ title: '搜索失败，请重试', icon: 'none' }) }
   finally { loading.value = false }
+}
+
+async function loadMore() {
+  if (loadingMore.value || !hasMore.value) return
+  loadingMore.value = true
+  try {
+    const np = page.value + 1
+    const res = await api.searchDestinations(lastParams, np)
+    const newItems = res.list || []
+    list.value = list.value.concat(newItems)
+    page.value = np
+    hasMore.value = list.value.length < (res.total || total.value)
+  } catch(e) { console.error(e) }
+  finally { loadingMore.value = false }
 }
 
 function sortList() {
@@ -247,7 +281,6 @@ function goBack() { uni.navigateBack() }
 .sp-filter-bt { font-size: 36rpx; color: #8A7A76; padding: 8rpx; position: relative; }
 .fb-dot { position: absolute; top: 2rpx; right: 0; width: 14rpx; height: 14rpx; border-radius: 50%; background: #E86A5E; border: 2rpx solid #FDF8F4; }
 
-/* filter panel overlay */
 .sp-overlay { position: fixed; inset: 0; z-index: 9; }
 .sp-panel { position: absolute; top: 96rpx; left: 20rpx; right: 20rpx; z-index: 10; padding: 24rpx; background: #fff; border-radius: 16rpx; box-shadow: 0 8rpx 40rpx rgba(44,36,34,0.12); }
 .pl-section { margin-bottom: 16rpx; }
@@ -256,13 +289,11 @@ function goBack() { uni.navigateBack() }
 .pl-pill { padding: 8rpx 18rpx; border-radius: 20rpx; font-size: 22rpx; background: #f5efeb; color: #5C4A46; }
 .pl-pill.act { background: #C4817A; color: #fff; }
 
-/* nearby */
 .sp-nearby { padding: 0 20rpx; }
 .nb-section { margin-bottom: 24rpx; }
 .nb-tt { font-size: 28rpx; font-weight: 600; color: #2C2422; margin-bottom: 12rpx; }
 .nb-tt2 { font-size: 26rpx; color: #8A7A76; text-align: center; padding: 60rpx 0; }
 
-/* sort + distance bar */
 .sp-bar { padding: 8rpx 20rpx 0; }
 .sp-sort { display: inline-flex; white-space: nowrap; margin-bottom: 8rpx; }
 .sp-sb { display: inline-flex; padding: 6rpx 20rpx; margin-right: 8rpx; border-radius: 20rpx; font-size: 22rpx; background: rgba(255,255,255,0.7); color: #8A7A76; }
@@ -275,6 +306,8 @@ function goBack() { uni.navigateBack() }
 .hl { color: #C4817A; font-weight: 600; }
 
 .sp-list { padding: 0 20rpx 40rpx; display: flex; flex-direction: column; gap: 16rpx; }
+
+.sp-more { text-align: center; padding: 20rpx 0; font-size: 24rpx; color: #C4817A; }
 
 .sp-empty { text-align: center; padding: 120rpx 0; }
 .e-icon { font-size: 64rpx; display: block; margin-bottom: 16rpx; }

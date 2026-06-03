@@ -7,7 +7,11 @@ async function request(url, data = {}, method = 'GET') {
     uni.request({
       url: BASE + url,
       data, method, timeout: 10000,
-      success: (res) => resolve(res.data),
+      success: (res) => {
+        const d = res.data
+        if (d && typeof d === 'object' && !Array.isArray(d) && 'list' in d) return resolve(d)
+        resolve(d)
+      },
       fail: () => {
         uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
         reject(new Error('request fail'))
@@ -20,12 +24,12 @@ export const api = {
   getHotThemes: () => request('/themes/hot'),
   getAllThemes: () => request('/themes/all'),
   getSuggestions: (q) => request('/destinations/suggestions', { q }),
-  searchDestinations: (params) => {
+  searchDestinations: (params, page = 1) => {
     if (typeof params === 'string' || !params) {
       const q = typeof params === 'string' ? params : ''
-      return request('/destinations/search', { q })
+      return request('/destinations/search', { q, page, pageSize: 20 })
     }
-    return request('/destinations/search', params)
+    return request('/destinations/search', { ...params, page, pageSize: 20 })
   },
   getNearby: (loc) => request('/destinations/nearby', { lat: loc?.lat, lng: loc?.lng }),
   getDetail: (id, loc) => request(`/destinations/${id}`, { lat: loc?.lat, lng: loc?.lng }),
@@ -40,5 +44,25 @@ export const api = {
   // comments
   getComments: (destId, page) => request(`/comments/${destId}`, { page: page || 1 }),
   postComment: (data) => request('/comments', data, 'POST'),
-  deleteComment: (id, openid) => request(`/comments/${id}?openid=${openid}`, {}, 'DELETE')
+  deleteComment: (id, openid) => request(`/comments/${id}?openid=${openid}`, {}, 'DELETE'),
+  // image upload (returns url or null)
+  uploadImage: (filePath) => {
+    return new Promise((resolve) => {
+      ensureBaseDetected().then(() => {
+        const BASE = getApiBase()
+        wx.uploadFile({
+          url: BASE + '/api/comments/upload',
+          filePath,
+          name: 'image',
+          success: (res) => {
+            try {
+              const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data
+              resolve(data.url || null)
+            } catch { resolve(null) }
+          },
+          fail: () => resolve(null)
+        })
+      })
+    })
+  }
 }

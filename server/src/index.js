@@ -8,6 +8,7 @@ import themesRouter from './routes/themes.js'
 import destinationsRouter from './routes/destinations.js'
 import usersRouter from './routes/users.js'
 import commentsRouter from './routes/comments.js'
+import authRouter from './routes/auth.js'
 
 const app = express()
 const PORT = process.env.PORT || 3002
@@ -23,6 +24,7 @@ app.use('/api/themes', themesRouter)
 app.use('/api/destinations', destinationsRouter)
 app.use('/api/users', usersRouter)
 app.use('/api/comments', commentsRouter)
+app.use('/api/auth', authRouter)
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')))

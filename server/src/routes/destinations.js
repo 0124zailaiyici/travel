@@ -36,9 +36,11 @@ router.get('/suggestions', (req, res) => {
 })
 
 router.get('/search', async (req, res) => {
-  const { q = '', city = '', lat, lng, theme, minRating, maxDuration, sort: sortBy = 'distance' } = req.query
+  const { q = '', city = '', lat, lng, theme, minRating, maxDuration, sort: sortBy = 'distance', page = 1, pageSize = 20 } = req.query
   const db = getDb()
   const keyword = q.trim()
+  const pg = Math.max(1, parseInt(page))
+  const ps = Math.min(100, Math.max(1, parseInt(pageSize) || 20))
 
   let sql = 'SELECT DISTINCT d.* FROM destinations d'
   const params = []
@@ -66,11 +68,14 @@ router.get('/search', async (req, res) => {
     params.push(`%${city}%`)
   }
   const limit = keyword || theme ? 50 : 20
-  let localResults
+  let localResults, total
   if (wheres.length) {
-    localResults = db.prepare(`${sql} WHERE ${wheres.join(' AND ')} LIMIT ?`).all(...params, limit)
+    const countSql = sql.replace('SELECT DISTINCT d.*', 'SELECT COUNT(DISTINCT d.id)')
+    total = db.prepare(countSql + ' WHERE ' + wheres.join(' AND ')).get(...params)['COUNT(DISTINCT d.id)']
+    localResults = db.prepare(`${sql} WHERE ${wheres.join(' AND ')} LIMIT ? OFFSET ?`).all(...params, ps, (pg - 1) * ps)
   } else {
-    localResults = db.prepare('SELECT * FROM destinations ORDER BY rating DESC LIMIT ?').all(limit)
+    total = db.prepare('SELECT COUNT(*) as c FROM destinations').get().c
+    localResults = db.prepare('SELECT * FROM destinations ORDER BY rating DESC LIMIT ? OFFSET ?').all(ps, (pg - 1) * ps)
   }
 
   const userLat2 = parseFloat(lat), userLng2 = parseFloat(lng)
@@ -79,8 +84,8 @@ router.get('/search', async (req, res) => {
     ...d, distance: hasLoc2 ? calculateDistance(userLat2, userLng2, d.lat, d.lng) : null
   }))
 
-  // Tencent POI supplement (only when key is available)
-  if (keyword) {
+  // Tencent POI supplement (only on page 1)
+  if (keyword && pg === 1) {
     try {
       const apiPois = await searchPOI(keyword, city || keyword)
       const seen = new Set(results.map(d => d.name))
@@ -90,6 +95,7 @@ router.get('/search', async (req, res) => {
           seen.add(p.name)
         }
       }
+      total += apiPois.filter(p => !results.some(r => r.name === p.name)).length
     } catch {}
   }
 
@@ -98,7 +104,7 @@ router.get('/search', async (req, res) => {
   } else {
     results.sort((a, b) => (a.distance ?? 99999) - (b.distance ?? 99999))
   }
-  res.json(results.map(addImageUrl))
+  res.json({ total, page: pg, list: results.map(addImageUrl) })
 })
 
 router.get('/nearby', async (req, res) => {

@@ -242,12 +242,13 @@ import { ref, computed, watch } from 'vue'
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { api } from '../../api/index.js'
 import { getLocation } from '../../api/location.js'
-import { getUserId } from '../../api/user.js'
+import { getUserId, ensureUserId } from '../../api/user.js'
 import { getApiBase } from '../../config.js'
 import ShimmerCard from '../../components/ShimmerCard.vue'
 const detail = ref({}); const isFav = ref(false)
 const expandedDays = ref([])
 const allDaysExpanded = computed(() => expandedDays.value.every(v => v))
+const uid = ref(getUserId())
 
 // share
 const showShareSheet = ref(false)
@@ -269,7 +270,6 @@ const cmtText = ref('')
 const cmtRating = ref(0)
 const cmtImage = ref('')
 const replyingTo = ref(null)
-const uid = getUserId()
 
 function startReply(c) {
   replyingTo.value = c
@@ -291,7 +291,7 @@ async function loadComments(page) {
     cmtTotal.value = res.total
     cmtPage.value = page || 1
     loadCommentImages(res.list)
-  } catch(e) { console.error(e) }
+  } catch(e) { console.error(e); uni.showToast({ title: '加载评论失败', icon: 'none' }) }
   finally { loadingComments.value = false; cmtLoadingMore.value = false }
 }
 
@@ -348,16 +348,21 @@ async function submitComment() {
   try {
     const data = {
       destination_id: detail.value.id,
-      openid: uid,
-      nickname: '用户_' + uid.slice(-4),
+      openid: uid.value,
+      nickname: '用户_' + uid.value.slice(-4),
       rating: cmtRating.value || null,
       content: txt
     }
     if (cmtImage.value) {
       uni.showLoading({ title: '上传中…' })
-      const fs = uni.getFileSystemManager()
-      const b64 = fs.readFileSync(cmtImage.value, 'base64')
-      data.image_data = b64
+      const url = await api.uploadImage(cmtImage.value)
+      if (url) {
+        data.image_url = url
+      } else {
+        // fallback to base64
+        const fs = uni.getFileSystemManager()
+        data.image_data = fs.readFileSync(cmtImage.value, 'base64')
+      }
       uni.hideLoading()
     }
     if (replyingTo.value) data.parent_id = replyingTo.value.id
@@ -378,7 +383,7 @@ async function deleteComment(id) {
   const ok = await new Promise(r => uni.showModal({ title:'确认删除', content:'删除后不可恢复', success:(e) => r(e.confirm) }))
   if (!ok) return
   try {
-    await api.deleteComment(id, uid)
+    await api.deleteComment(id, uid.value)
     uni.showToast({ title:'已删除', icon:'none' })
     loadComments()
   } catch(e) {
@@ -428,7 +433,7 @@ function budgetBarWidth(val) {
 async function toggleFav() {
   const id = detail.value.id
   try {
-    const res = await api.syncToggleFav(getUserId(), id)
+    const res = await api.syncToggleFav(uid.value, id)
     isFav.value = !res.removed
     uni.showToast({ title: res.removed ? '已取消' : '已收藏', icon: 'none' })
   } catch(e) {
@@ -439,13 +444,15 @@ async function toggleFav() {
 onLoad(async (o) => {
   if (!o.id) return
   try {
+    const realUid = await ensureUserId()
+    if (realUid) uid.value = realUid
     const loc = await getLocation(); const data = await api.getDetail(o.id, loc)
     detail.value = data
-    const favs = await api.syncGetFavs(getUserId())
+    const favs = await api.syncGetFavs(uid.value)
     isFav.value = favs.some(d => d.id === data.id)
     expandedDays.value = data.itinerary?.map(() => true) || []
     loadComments()
-    api.postHistory(getUserId(), o.id).catch(() => {})
+    api.postHistory(uid.value, o.id).catch(() => {})
   } catch(e) { console.error(e); uni.showToast({ title:'加载失败', icon:'none' }) }
 })
 onShareAppMessage(() => ({
@@ -477,8 +484,6 @@ async function genShareImage(mode) {
   uni.showLoading({ title: '生成中…', mask: true })
   const d = detail.value
   const msg = shareMsg.value.trim() || '推荐这个好地方！'
-  const uid = getUserId()
-
   try {
     const query = uni.createSelectorQuery()
     const canvasNode = await new Promise((res, rej) => {
@@ -529,7 +534,7 @@ async function genShareImage(mode) {
       ctx.textAlign = 'left'
       ctx.font = '18px sans-serif'
       ctx.fillStyle = '#8A7A76'
-      ctx.fillText('💌 ' + uid.slice(-4) + ' 的推荐', 80, 312)
+      ctx.fillText('💌 ' + uid.value.slice(-4) + ' 的推荐', 80, 312)
 
       ctx.font = '24px sans-serif'
       ctx.fillStyle = '#2C2422'
