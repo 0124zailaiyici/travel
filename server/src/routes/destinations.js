@@ -263,9 +263,15 @@ router.get('/:id', async (req, res) => {
   const themeIcon = themes.length ? (emojiMap[themes[0].tid] || '📍') : '📍'
   const weather = await getWeather(dest.lat, dest.lng)
 
+  // user rating from comments
+  const ratingRow = db.prepare('SELECT AVG(rating) as avg, COUNT(*) as cnt FROM comments WHERE destination_id = ? AND rating IS NOT NULL').get(dest.id)
+  const userRating = ratingRow?.avg ? Math.round(ratingRow.avg * 10) / 10 : null
+  const userRatingCount = ratingRow?.cnt || 0
+
   res.json(addImageUrl({
     ...dest, highlights, tags, itinerary,
-    tips, budget, themes, distance, themeIcon, weather, transportDetail, route
+    tips, budget, themes, distance, themeIcon, weather, transportDetail, route,
+    userRating, userRatingCount
   }))
 })
 

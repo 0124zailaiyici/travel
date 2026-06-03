@@ -21,7 +21,8 @@
           <view class="hero-info">
             <text class="hero-name">{{ detail.name }}</text>
             <view class="hero-stats">
-              <text>⭐ {{ detail.rating }}</text>
+              <text>🏷️ {{ detail.rating }}</text>
+              <text v-if="detail.userRating">💬 {{ detail.userRating }} ({{ detail.userRatingCount }}评)</text>
               <text>📍 {{ detail.distance || '?' }}km</text>
               <text>📅 {{ detail.best_season || '全年' }}</text>
               <text>⏱ {{ detail.duration }}日</text>

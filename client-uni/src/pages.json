@@ -9,6 +9,10 @@
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "花期",
     "navigationBarBackgroundColor": "#F8F8F8",
-    "backgroundColor": "#F5F5F5"
+    "backgroundColor": "#F5F5F5",
+    "usingComponents": {
+      "dest-card": "/components/DestCard",
+      "shimmer-card": "/components/ShimmerCard"
+    }
   }
 }

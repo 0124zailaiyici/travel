@@ -87,6 +87,8 @@ describe('Detail', () => {
     expect(res.body).toHaveProperty('budget')
     expect(res.body).toHaveProperty('themes')
     expect(res.body).toHaveProperty('weather')
+    expect(res.body).toHaveProperty('userRating')
+    expect(res.body).toHaveProperty('userRatingCount')
     expect(res.body).toHaveProperty('transportDetail')
     expect(res.body).toHaveProperty('route')
   })
