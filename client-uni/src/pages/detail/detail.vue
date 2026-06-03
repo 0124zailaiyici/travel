@@ -1,11 +1,7 @@
 <template>
   <view class="dp">
     <view class="dp-scroll">
-      <view class="shim" v-if="!detail.name">
-        <view class="shim-hero"></view>
-        <view class="shim-card"><view class="s-l w60"></view><view class="s-l w40"></view><view class="s-l w80"></view></view>
-        <view class="shim-card"><view class="s-l w50"></view><view class="s-l w90"></view><view class="s-l w90"></view></view>
-      </view>
+      <ShimmerCard v-if="!detail.name" mode="hero" :lines="2" />
 
       <!-- === SHARE BANNER === -->
       <view class="share-banner" @tap="showShareSheet = true">
@@ -247,6 +243,7 @@ import { api } from '../../api/index.js'
 import { getLocation } from '../../api/location.js'
 import { getUserId } from '../../api/user.js'
 import { getApiBase } from '../../config.js'
+import ShimmerCard from '../../components/ShimmerCard.vue'
 const detail = ref({}); const isFav = ref(false)
 const expandedDays = ref([])
 const allDaysExpanded = computed(() => expandedDays.value.every(v => v))
@@ -625,14 +622,6 @@ async function saveImage(canvasNode, mode) {
 .dp { height: 100vh; background: #FDF8F4; display: flex; flex-direction: column; }
 
 .dp-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-/* shimmer */
-.shim { padding: 0 24rpx; }
-.shim-hero { height: 420rpx; border-radius: 0 0 24rpx 24rpx; background: linear-gradient(90deg,#f0e8e4 25%,#e8ddd8 50%,#f0e8e4 75%); background-size:200% 100%; animation: sh 1.5s infinite; }
-.shim-card { margin-top: 20rpx; padding: 28rpx; background: rgba(255,255,255,0.88); border-radius: 20rpx; }
-.s-l { height: 24rpx; border-radius: 12rpx; background: linear-gradient(90deg,#f0e8e4 25%,#e8ddd8 50%,#f0e8e4 75%); background-size:200% 100%; animation: sh 1.5s infinite; margin-bottom:14rpx; }
-.w60{width:60%}.w40{width:40%}.w80{width:80%}.w50{width:50%}.w90{width:90%}
-@keyframes sh { 0%{background-position:200% 0}100%{background-position:-200% 0} }
-
 /* hero */
 .hero-w { position: relative; height: 420rpx; overflow: hidden; }
 .hi { width: 100%; height: 100%; background: linear-gradient(135deg,#E8B4AE,#C4817A); display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }

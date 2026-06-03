@@ -57,24 +57,9 @@
       </view>
       <view class="nb-section" v-if="nearbyList.length">
         <text class="nb-tt">📍 附近推荐</text>
-        <view class="sp-nb-card" v-for="d in nearbyList" :key="d.id" @tap="goDetail(d.id)">
-          <view class="nb-img">
-            <image class="sni-i" :src="d.image_url" mode="aspectFill" v-if="d.image_url" />
-            <text class="sni-fb" v-else>{{ d.icon || '🌸' }}</text>
-          </view>
-          <view class="nb-body">
-            <text class="nb-name">{{ d.name }}</text>
-            <view class="nb-desc">{{ d.description }}</view>
-            <view class="nb-foot">
-              <text class="nb-star">⭐ {{ d.rating }}</text>
-              <text class="nb-dist">{{ d.distance }}km</text>
-            </view>
-          </view>
-        </view>
+        <DestCard v-for="d in nearbyList" :key="d.id" :name="d.name" :description="d.description" :rating="d.rating" :distance="d.distance" :imageUrl="d.image_url" :fallbackIcon="d.icon || '🌸'" :showDistance="true" @tap="goDetail(d.id)" />
       </view>
-      <view class="nb-loading" v-if="!nbLoaded && !nearbyList.length">
-        <view class="sh-card" v-for="i in 3" :key="i"><view class="sh-img"></view><view class="sh-body"><view class="sh-l w70"></view><view class="sh-l w90"></view></view></view>
-      </view>
+      <ShimmerCard v-if="!nbLoaded && !nearbyList.length" :rows="3" :cols="1" :imgSize="180" :lineCount="2" :lineWidths="['w70','w90']" />
     </view>
 
     <!-- sort + distance filters (only when results exist) -->
@@ -91,32 +76,11 @@
     <text class="sp-count" v-if="!loading && displayList.length">共 <text class="hl">{{ displayList.length }}</text> 个结果</text>
 
     <!-- shimmer -->
-    <view class="sp-shimmer" v-if="loading">
-      <view class="sh-card" v-for="i in 4" :key="i"><view class="sh-img"></view><view class="sh-body"><view class="sh-l w60"></view><view class="sh-l w90"></view><view class="sh-l w40"></view></view></view>
-    </view>
+    <ShimmerCard v-if="loading" :rows="4" :cols="1" :imgSize="200" :lineCount="3" :lineWidths="['w60','w90','w40']" />
 
     <!-- result list -->
     <view class="sp-list" v-if="!loading && searched">
-      <view class="rs-card" v-for="d in displayList" :key="d.id" @tap="goDetail(d.id)">
-        <view class="rs-img">
-          <image class="ri-i" :src="d.image_url" mode="aspectFill" v-if="d.image_url" />
-          <text class="ri-fb" v-else>{{ d.icon || '🌸' }}</text>
-        </view>
-        <view class="rs-body">
-          <view class="rs-top">
-            <view class="rs-name">{{ d.name }}</view>
-            <text class="rs-dist">{{ d.distance || '?' }}km</text>
-          </view>
-          <view class="rs-desc">{{ d.description }}</view>
-          <view class="rs-meta">
-            <text class="rs-star">⭐ {{ d.rating }}</text>
-            <text>{{ d.duration || '1' }}天</text>
-          </view>
-          <view class="rs-tags">
-            <text class="rs-tag" v-for="t in (d.tags || [])" :key="t">{{ t }}</text>
-          </view>
-        </view>
-      </view>
+      <DestCard v-for="d in displayList" :key="d.id" :name="d.name" :description="d.description" :rating="d.rating" :bestSeason="null" :distance="d.distance" :duration="d.duration" :imageUrl="d.image_url" :fallbackIcon="d.icon || '🌸'" :tags="d.tags" :showDistance="true" :showTags="true" @tap="goDetail(d.id)" />
       <view class="sp-empty" v-if="!loading && displayList.length === 0 && searched">
         <text class="e-icon">🔍</text>
         <text class="e-tt">{{ list.length ? '当前距离范围内没有结果' : '没找到相关目的地' }}</text>
@@ -132,6 +96,8 @@ import { onLoad, onPullDownRefresh } from '@dcloudio/uni-app'
 import { api } from '../../api/index.js'
 import { getLocation } from '../../api/location.js'
 import { getUserId } from '../../api/user.js'
+import DestCard from '../../components/DestCard.vue'
+import ShimmerCard from '../../components/ShimmerCard.vue'
 
 const query = ref('')
 const list = ref([])
@@ -290,22 +256,11 @@ function goBack() { uni.navigateBack() }
 .pl-pill { padding: 8rpx 18rpx; border-radius: 20rpx; font-size: 22rpx; background: #f5efeb; color: #5C4A46; }
 .pl-pill.act { background: #C4817A; color: #fff; }
 
-/* nearby popular */
+/* nearby */
 .sp-nearby { padding: 0 20rpx; }
 .nb-section { margin-bottom: 24rpx; }
 .nb-tt { font-size: 28rpx; font-weight: 600; color: #2C2422; margin-bottom: 12rpx; }
 .nb-tt2 { font-size: 26rpx; color: #8A7A76; text-align: center; padding: 60rpx 0; }
-.sp-nb-card { display: flex; background: rgba(255,255,255,0.88); border-radius: 20rpx; overflow: hidden; margin-bottom: 14rpx; box-shadow: 0 2rpx 14rpx rgba(196,129,122,0.06); }
-.nb-img { width: 180rpx; height: 180rpx; flex-shrink: 0; position: relative; overflow: hidden; background: linear-gradient(135deg,#E8B4AE,#C4817A); display: flex; align-items: center; justify-content: center; }
-.sni-i { width: 100%; height: 100%; }
-.sni-fb { font-size: 40rpx; }
-.nb-body { flex: 1; padding: 16rpx 18rpx; display: flex; flex-direction: column; min-width: 0; }
-.nb-name { font-size: 26rpx; font-weight: 600; color: #2C2422; margin-bottom: 4rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.nb-desc { font-size: 22rpx; color: #8A7A76; line-height: 1.5; flex: 1; word-break: break-all; max-height: 99rpx; overflow: hidden; margin: 0; }
-.nb-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8rpx; }
-.nb-star { font-size: 22rpx; color: #E8A838; }
-.nb-dist { font-size: 22rpx; color: #C4817A; font-weight: 600; flex-shrink: 0; }
-.nb-loading { text-align: center; padding: 60rpx 0; color: #8A7A76; font-size: 26rpx; }
 
 /* sort + distance bar */
 .sp-bar { padding: 8rpx 20rpx 0; }
@@ -319,29 +274,12 @@ function goBack() { uni.navigateBack() }
 .sp-count { padding: 8rpx 28rpx; font-size: 24rpx; color: #8A7A76; }
 .hl { color: #C4817A; font-weight: 600; }
 
-/* shimmer */
-.sp-shimmer { padding: 0 20rpx; }
-.sh-card { display: flex; margin-bottom: 16rpx; background: rgba(255,255,255,0.88); border-radius: 20rpx; overflow: hidden; }
-.sh-img { width: 200rpx; height: 200rpx; flex-shrink: 0; background: linear-gradient(90deg,#f0e8e4 25%,#e8ddd8 50%,#f0e8e4 75%); background-size: 200% 100%; animation: shim 1.5s infinite; }
-.sh-body { flex: 1; padding: 20rpx; }
-.sh-l { height: 22rpx; border-radius: 11rpx; background: linear-gradient(90deg,#f0e8e4 25%,#e8ddd8 50%,#f0e8e4 75%); background-size: 200% 100%; animation: shim 1.5s infinite; margin-bottom: 14rpx; }
-.w60 { width: 60%; } .w90 { width: 90%; } .w40 { width: 40%; }
-@keyframes shim { 0%{background-position:200% 0}100%{background-position:-200% 0} }
-
 .sp-list { padding: 0 20rpx 40rpx; display: flex; flex-direction: column; gap: 16rpx; }
-.rs-card { display: flex; background: rgba(255,255,255,0.88); border-radius: 20rpx; overflow: hidden; box-shadow: 0 2rpx 14rpx rgba(196,129,122,0.06); position: relative; }
-.rs-img { width: 200rpx; height: 200rpx; flex-shrink: 0; position: relative; overflow: hidden; background: linear-gradient(135deg,#E8B4AE,#C4817A); display: flex; align-items: center; justify-content: center; }
-.ri-i { width: 100%; height: 100%; }
-.ri-fb { font-size: 48rpx; }
-.rs-body { flex: 1; padding: 16rpx 18rpx; display: flex; flex-direction: column; min-width: 0; }
-.rs-top { display: flex; flex-direction: row; min-width: 0; }
-.rs-name { font-size: 28rpx; font-weight: 600; color: #2C2422; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
-.rs-dist { font-size: 22rpx; color: #C4817A; font-weight: 600; flex-shrink: 0; margin-left: auto; padding-left: 8rpx; }
-.rs-desc { font-size: 22rpx; color: #8A7A76; line-height: 1.5; margin: 6rpx 0 4rpx; word-break: break-all; max-height: 99rpx; overflow: hidden; }
-.rs-meta { display: flex; gap: 14rpx; font-size: 22rpx; margin: 4rpx 0; }
-.rs-star { color: #E8A838; }
-.rs-tags { display: flex; flex-wrap: wrap; gap: 6rpx; margin-top: 6rpx; }
-.rs-tag { padding: 4rpx 14rpx; border-radius: 14rpx; font-size: 20rpx; background: rgba(196,129,122,0.08); color: #C4817A; }
+
+.sp-empty { text-align: center; padding: 120rpx 0; }
+.e-icon { font-size: 64rpx; display: block; margin-bottom: 16rpx; }
+.e-tt { font-size: 28rpx; color: #8A7A76; display: block; }
+.e-sub { font-size: 24rpx; color: #C4817A; margin-top: 8rpx; display: block; }
 
 .sp-history { margin: 0 24rpx; padding: 16rpx 0; }
 .sp-hd { font-size: 22rpx; color: #8A7A76; margin-bottom: 10rpx; }
@@ -350,9 +288,4 @@ function goBack() { uni.navigateBack() }
 
 .sp-suggest { margin: 0 24rpx; background: #fff; border-radius: 12rpx; box-shadow: 0 4rpx 20rpx rgba(44,36,34,0.08); position: relative; z-index: 10; }
 .sg-item { padding: 20rpx 24rpx; font-size: 26rpx; color: #2C2422; border-bottom: 1rpx solid #f5efeb; }
-
-.sp-empty { text-align: center; padding: 120rpx 0; }
-.e-icon { font-size: 64rpx; display: block; margin-bottom: 16rpx; }
-.e-tt { font-size: 28rpx; color: #8A7A76; display: block; }
-.e-sub { font-size: 24rpx; color: #C4817A; margin-top: 8rpx; display: block; }
 </style>

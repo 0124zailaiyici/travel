@@ -1,5 +1,15 @@
 <template><view></view></template>
 
+<script setup>
+import { onLaunch } from '@dcloudio/uni-app'
+onLaunch(() => {
+  const fn = wx.onNeedPrivacyAuthorization || uni.onNeedPrivacyAuthorization
+  if (fn) {
+    fn((resolve) => { resolve({ buttonId: 'agree-btn', event: 'agree' }) })
+  }
+})
+</script>
+
 <style>
 page {
   background-color: #FDF8F4;

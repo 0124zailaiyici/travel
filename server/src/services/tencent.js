@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const KEY = process.env.TENCENT_MAP_KEY || 'EZ4BZ-IMWC7-O2NXO-HODYQ-WXPS6-2VFLK'
+const KEY = process.env.TENCENT_MAP_KEY
 const BASE = 'https://apis.map.qq.com/ws'
 
 const ALLOW_TYPES = [
