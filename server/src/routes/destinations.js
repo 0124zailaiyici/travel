@@ -248,12 +248,17 @@ router.get('/:id', async (req, res) => {
   let transportDetail = null
   if (transportRow) { try { transportDetail = JSON.parse(transportRow.amount) } catch(e) {} }
   const budgetRows = db.prepare('SELECT category, amount FROM budgets WHERE destination_id = ?').all(dest.id)
+  const parseAmt = v => { if (typeof v === 'string') { try { return JSON.parse(v) } catch {} } return v }
   let budget = {}
   const detail = budgetRows.find(b => b.category === '_detail')
   if (detail) {
-    try { budget = JSON.parse(detail.amount) } catch(e) { budget = {} }
+    budget = parseAmt(detail.amount)
+    if (typeof budget !== 'object') budget = {}
   } else {
-    for (const b of budgetRows) budget[b.category] = b.amount
+    for (const b of budgetRows) {
+      if (b.category === '_detail' || b.category === '_transport') continue
+      budget[b.category] = parseAmt(b.amount)
+    }
   }
   const themeIcon = themes.length ? (emojiMap[themes[0].tid] || '📍') : '📍'
   const weather = await getWeather(dest.lat, dest.lng)

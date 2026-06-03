@@ -34,6 +34,8 @@ export const api = {
   // synced favorites (backend)
   syncGetFavs: (uid) => request('/users/favorites', { openid: uid }),
   syncToggleFav: (uid, destId) => request('/users/favorites', { openid: uid, destination_id: destId }, 'POST'),
+  // history
+  postHistory: (openid, destId) => request('/users/history', { openid, destination_id: destId }, 'POST'),
   // comments
   getComments: (destId, page) => request(`/comments/${destId}`, { page: page || 1 }),
   postComment: (data) => request('/comments', data, 'POST'),

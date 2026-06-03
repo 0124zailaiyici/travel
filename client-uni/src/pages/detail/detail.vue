@@ -447,6 +447,7 @@ onLoad(async (o) => {
     isFav.value = favs.some(d => d.id === data.id)
     expandedDays.value = data.itinerary?.map(() => true) || []
     loadComments()
+    api.postHistory(getUserId(), o.id).catch(() => {})
   } catch(e) { console.error(e); uni.showToast({ title:'加载失败', icon:'none' }) }
 })
 onShareAppMessage(() => ({
