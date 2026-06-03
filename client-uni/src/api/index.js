@@ -1,9 +1,11 @@
-import { getApiBase } from '../config.js'
+import { getApiBase, ensureBaseDetected } from '../config.js'
 
-function request(url, data = {}, method = 'GET') {
+async function request(url, data = {}, method = 'GET') {
+  await ensureBaseDetected()
+  const BASE = getApiBase() + '/api'
   return new Promise((resolve, reject) => {
     uni.request({
-      url: getApiBase() + '/api' + url,
+      url: BASE + url,
       data, method, timeout: 10000,
       success: (res) => resolve(res.data),
       fail: () => {
