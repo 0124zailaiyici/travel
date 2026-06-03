@@ -1,6 +1,6 @@
 <template>
   <view class="dp">
-    <view class="dp-scroll">
+    <scroll-view class="dp-scroll" scroll-y @scrolltolower="loadMoreComments">
       <ShimmerCard v-if="!detail.name" mode="hero" :lines="2" />
 
       <!-- === SHARE BANNER === -->
@@ -179,7 +179,7 @@
           <button class="nav-bt" @tap="navigate">📍 导航去</button>
         </view>
       </template>
-    </view>
+    </scroll-view>
 
     <!-- === FIXED COMMENT INPUT BAR === -->
     <view class="ci-bar" v-if="detail.name">
@@ -334,7 +334,12 @@ function timeAgo(t) {
 
 function pickImage() {
   wx.chooseImage({ count: 1, sizeType: ['original'], sourceType: ['album', 'camera'],
-    success: (res) => { cmtImage.value = res.tempFilePaths[0] }
+    success: (res) => {
+      wx.compressImage({ src: res.tempFilePaths[0], quality: 80,
+        success: (cr) => { cmtImage.value = cr.tempFilePath },
+        fail: () => { cmtImage.value = res.tempFilePaths[0] }
+      })
+    }
   })
 }
 

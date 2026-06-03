@@ -10,6 +10,7 @@ import NodeCache from 'node-cache'
 
 const router = Router()
 const itineraryCache = new NodeCache({ stdTTL: 604800 })
+const routeCache = new NodeCache({ stdTTL: 86400 })
 
 const emojiMap = {
   't1':'🌸','t2':'🏔️','t3':'🏖️','t4':'🍁','t5':'🦀',
@@ -195,14 +196,21 @@ router.get('/:id', async (req, res) => {
   const hasULoc = !isNaN(ulat) && !isNaN(ulng)
   const distance = hasULoc ? calculateDistance(ulat, ulng, dest.lat, dest.lng) : null
 
-  // real-time route planning from user location to destination
+  // real-time route planning from user location to destination (cached 24h)
   let route = null
   if (hasULoc) {
-    const [driving, transit] = await Promise.all([
-      getDrivingRoute(ulat, ulng, dest.lat, dest.lng).catch(() => null),
-      getTransitRoute(ulat, ulng, dest.lat, dest.lng).catch(() => null)
-    ])
-    if (driving || transit) route = { driving, transit }
+    const rk = `${ulat.toFixed(1)}_${ulng.toFixed(1)}_${dest.lat}_${dest.lng}`
+    const cached = routeCache.get(rk)
+    if (cached !== undefined) {
+      route = cached
+    } else {
+      const [driving, transit] = await Promise.all([
+        getDrivingRoute(ulat, ulng, dest.lat, dest.lng).catch(() => null),
+        getTransitRoute(ulat, ulng, dest.lat, dest.lng).catch(() => null)
+      ])
+      route = driving || transit ? { driving, transit } : null
+      routeCache.set(rk, route)
+    }
   }
 
   // cache TTL: regenerate DeepSeek data after N days
