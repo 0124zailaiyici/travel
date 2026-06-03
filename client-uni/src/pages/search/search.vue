@@ -42,6 +42,14 @@
       </view>
     </view>
 
+    <!-- browse history -->
+    <view class="sp-history" v-if="!query.trim() && !suggestions.length && browseHistory.length && !showPanel">
+      <view class="sp-hd">浏览记录</view>
+      <view class="sp-h-list">
+        <text class="sp-h-item" v-for="(h, i) in browseHistory" :key="i" @tap="goDetail(h.id)">{{ h.name }}</text>
+      </view>
+    </view>
+
     <!-- nearby popular (idle) -->
     <view class="sp-nearby" v-if="!query.trim() && !searched && !showPanel">
       <view class="nb-section" v-if="nbLoaded && !nearbyList.length">
@@ -123,6 +131,7 @@ import { ref, watch } from 'vue'
 import { onLoad, onPullDownRefresh } from '@dcloudio/uni-app'
 import { api } from '../../api/index.js'
 import { getLocation } from '../../api/location.js'
+import { getUserId } from '../../api/user.js'
 
 const query = ref('')
 const list = ref([])
@@ -163,6 +172,10 @@ const suggestions = ref([])
 const showSuggest = ref(false)
 let suggestTimer = null
 
+// browse history
+const browseHistory = ref([])
+const browseLoading = ref(false)
+
 // history
 const history = ref([])
 function loadHistory() {
@@ -182,6 +195,9 @@ function saveHistory(q) {
 
 onLoad(async (o) => {
   loadHistory()
+  browseLoading.value = true
+  api.getHistory(getUserId()).then(r => { browseHistory.value = (r || []).slice(0, 10) }).catch(() => {})
+    .finally(() => { browseLoading.value = false })
   allThemes.value = await api.getAllThemes()
   if (o.q) { query.value = o.q; doSearch() }
   else if (o.theme) { filterTheme.value = o.theme; doSearch() }
