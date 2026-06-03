@@ -6,7 +6,7 @@
   "description": "按主题+距离排序的旅行目的地推荐工具",
   "mp-weixin": {
     "appid": "wxe75115ad1e8c32c9",
-    "setting": { "urlCheck": false },
+    "setting": { "urlCheck": false, "privacy": true },
     "permission": { "scope.userLocation": { "desc": "用于获取您的位置并推荐附近目的地" } },
     "requiredPrivateInfos": ["getLocation", "chooseLocation"]
   }
