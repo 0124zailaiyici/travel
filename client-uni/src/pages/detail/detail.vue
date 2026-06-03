@@ -166,7 +166,7 @@
                 <text class="cmt-tx" v-if="c.parent_id" style="font-size:20rpx;color:#8A7A76;">回复 @{{ findParentName(c.parent_id) }}</text>
                 <text class="cmt-tx">{{ c.content }}</text>
                 <template v-if="c.image_url">
-                  <image class="cmt-img" :src="loadedImgUrls[c.id]" mode="aspectFill" v-if="loadedImgUrls[c.id]" @tap="previewImg(loadedImgUrls[c.id])" />
+                  <image class="cmt-img" :src="loadedImgUrls[c.id]" mode="aspectFill" v-if="loadedImgUrls[c.id]" @tap="previewImg(fullImgUrl(c.image_url))" />
                   <view class="cmt-img-loading" v-else />
                 </template>
                 <view class="cmt-acts">
