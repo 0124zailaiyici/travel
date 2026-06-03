@@ -59,7 +59,7 @@
         <text class="nb-tt">📍 附近推荐</text>
         <DestCard v-for="d in nearbyList" :key="d.id" :name="d.name" :description="d.description" :rating="d.rating" :distance="d.distance" :imageUrl="d.image_url" :fallbackIcon="d.icon || '🌸'" :showDistance="true" @tap="goDetail(d.id)" />
       </view>
-      <ShimmerCard v-if="!nbLoaded && !nearbyList.length" :rows="3" :cols="1" :imgSize="180" :lineCount="2" :lineWidths="['w70','w90']" />
+      <ShimmerCard v-if="!nbLoaded" :rows="3" :cols="1" :imgSize="180" :lineCount="2" :lineWidths="['w70','w90']" />
     </view>
 
     <!-- sort + distance filters (only when results exist) -->

@@ -69,12 +69,32 @@ const themes = ref([]); const nearby = ref([]); const inSeason = ref([])
 const monthText = ref('推荐')
 const mn = ['','一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月']
 
+function cacheGet(key, ttl) {
+  try {
+    const raw = uni.getStorageSync('idx_' + key)
+    if (!raw) return null
+    const d = JSON.parse(raw)
+    if (Date.now() - d.ts > ttl) return null
+    return d.data
+  } catch { return null }
+}
+function cacheSet(key, data) {
+  try { uni.setStorageSync('idx_' + key, JSON.stringify({ ts: Date.now(), data })) } catch {}
+}
+
 async function load() {
   try {
     monthText.value = mn[new Date().getMonth() + 1] + '推荐'
     const loc = await getLocation()
+    // try cache first
+    const ct = cacheGet('themes', 300000)
+    const cs = cacheGet('inSeason', 300000)
+    if (ct) themes.value = ct
+    if (cs) inSeason.value = cs
     const [t, n, s] = await Promise.all([api.getHotThemes(), api.getNearby(loc), api.getInSeason()])
     themes.value = t; nearby.value = n; inSeason.value = s
+    cacheSet('themes', t)
+    cacheSet('inSeason', s)
   } catch(e) { console.error(e); uni.showToast({ title: '加载失败，下拉重试', icon: 'none' }) }
 }
 onMounted(() => load())

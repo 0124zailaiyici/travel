@@ -74,9 +74,15 @@ router.post('/', (req, res) => {
 router.delete('/:id', (req, res) => {
   const { openid } = req.query || req.body
   const db = getDb()
-  const row = db.prepare('SELECT openid FROM comments WHERE id = ?').get(req.params.id)
+  const row = db.prepare('SELECT openid, image_url FROM comments WHERE id = ?').get(req.params.id)
   if (!row) return res.status(404).json({ error: '评论不存在' })
   if (row.openid !== openid) return res.status(403).json({ error: '无权删除' })
+  // delete image file if exists
+  if (row.image_url && row.image_url.startsWith('/uploads/')) {
+    try {
+      fs.unlinkSync(path.join(UPLOAD_DIR, path.basename(row.image_url)))
+    } catch {}
+  }
   db.prepare('DELETE FROM comments WHERE id = ?').run(req.params.id)
   db.prepare('DELETE FROM comments WHERE parent_id = ?').run(req.params.id)
   res.json({ success: true })

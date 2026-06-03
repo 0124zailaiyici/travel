@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import supertest from 'supertest'
 import app from '../index.js'
 
@@ -172,4 +172,38 @@ describe('Themes', () => {
     expect(res.body.length).toBeGreaterThan(0)
   })
 
+})
+
+describe('Auth API', () => {
+  it('POST /auth/login returns 400 without code', async () => {
+    const res = await request.post('/api/auth/login').send({})
+    expect(res.status).toBe(400)
+    expect(res.body.error).toBe('缺少 code')
+  })
+
+  it('POST /auth/login returns openid with valid code', async () => {
+    const res = await request.post('/api/auth/login').send({ code: 'test_code' })
+    expect(res.status).toBe(200)
+    expect(res.body.openid).toBe('test_openid_123')
+  })
+})
+
+describe('Search Pagination', () => {
+  it('GET /search returns paginated results with total', async () => {
+    const res = await request.get('/api/destinations/search?q=阳朔&page=1&pageSize=2')
+    expect(res.status).toBe(200)
+    expect(res.body.page).toBe(1)
+    expect(res.body.list.length).toBeGreaterThan(0)
+    expect(res.body.total).toBeGreaterThan(0)
+  })
+
+  it('GET /search page 2 returns different slice', async () => {
+    const p1 = await request.get('/api/destinations/search?page=1&pageSize=2')
+    const p2 = await request.get('/api/destinations/search?page=2&pageSize=2')
+    expect(p1.status).toBe(200)
+    expect(p2.status).toBe(200)
+    if (p1.body.list.length && p2.body.list.length) {
+      expect(p1.body.list[0].id).not.toBe(p2.body.list[0].id)
+    }
+  })
 })

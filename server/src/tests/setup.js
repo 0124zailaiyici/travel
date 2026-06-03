@@ -20,3 +20,9 @@ vi.mock('../services/weather.js', () => ({
 vi.mock('../services/iplocation.js', () => ({
   getLocationByIP: vi.fn().mockResolvedValue(null)
 }))
+
+vi.mock('axios', () => {
+  const mockAxios = { get: vi.fn(), post: vi.fn() }
+  mockAxios.get.mockResolvedValue({ data: { openid: 'test_openid_123', session_key: 'test_key' } })
+  return { default: mockAxios }
+})
