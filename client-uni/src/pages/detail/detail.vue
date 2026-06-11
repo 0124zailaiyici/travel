@@ -463,6 +463,11 @@ onShareAppMessage(() => ({
   path: '/pages/detail/detail?id=' + detail.value.id,
   imageUrl: detail.value.image_url
 }))
+function toArray(v) {
+  if (Array.isArray(v)) return v
+  if (typeof v === 'string') return v.split(/[,，、]/).map(s => s.trim()).filter(Boolean)
+  return []
+}
 function mealsList(m) {
   if (!m) return []
   let arr = m
@@ -473,7 +478,7 @@ function mealsList(m) {
   return arr.map(item => {
     if (typeof item === 'object' && item !== null) {
       const name = item.name || ''
-      const tries = item.must_try ? item.must_try.join('、') : ''
+      const tries = toArray(item.must_try).join('、')
       return name + (tries ? '：' + tries : '')
     }
     return item

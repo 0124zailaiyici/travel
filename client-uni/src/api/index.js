@@ -3,7 +3,7 @@ import { getApiBase, ensureBaseDetected } from '../config.js'
 async function request(url, data = {}, method = 'GET') {
   await ensureBaseDetected()
   const BASE = getApiBase() + '/api'
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 2; i++) {
     try {
       const res = await new Promise((resolve, reject) => {
         uni.request({
@@ -19,7 +19,7 @@ async function request(url, data = {}, method = 'GET') {
       })
       return res
     } catch (e) {
-      if (i < 2) await new Promise(r => setTimeout(r, 1000))
+      if (i < 1) await new Promise(r => setTimeout(r, 500))
       else {
         uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
         throw e
