@@ -11,6 +11,7 @@ export async function generateItinerary(destination) {
     console.log('DS: key invalid, using fallback')
     return generateFallbackItinerary(destination)
   }
+  console.log('DS: key check passed, building prompt...')
   const prompt = `你是资深旅行达人，为朋友写一份超详细的自由行攻略。
 
 目的地：${destination.name}
