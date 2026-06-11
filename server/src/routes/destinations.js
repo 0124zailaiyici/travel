@@ -233,7 +233,7 @@ router.get('/:id', async (req, res) => {
         const insertDay = db.prepare('INSERT INTO itineraries (id, destination_id, day_number, title, morning, afternoon, evening, meals, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
         for (let i = 0; i < itin.length; i++) {
           const day = itin[i]
-          insertDay.run(uuid(), dest.id, i + 1, day.title || '', day.morning || '', day.afternoon || '', day.evening || '', JSON.stringify(day.meals || []), isFallback ? '2020-01-01' : undefined)
+          insertDay.run(uuid(), dest.id, i + 1, day.title || '', day.morning || '', day.afternoon || '', day.evening || '', JSON.stringify(day.meals || []), isFallback ? '2020-01-01' : new Date().toISOString())
         }
         if (gen.tips) {
           const insertTip = db.prepare('INSERT INTO tips (id, destination_id, content, sort_order) VALUES (?, ?, ?, ?)')
