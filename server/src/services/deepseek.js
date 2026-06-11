@@ -1,10 +1,13 @@
+import 'dotenv/config'
 import axios from 'axios'
 
 const DS_KEY = process.env.DEEPSEEK_KEY
 const DS_BASE = 'https://api.deepseek.com'
+console.log('DS init: key?', !!DS_KEY, 'len:', (DS_KEY||'').length)
 
 export async function generateItinerary(destination) {
   if (!DS_KEY || DS_KEY === 'your_deepseek_key') {
+    console.log('DS: key invalid, using fallback')
     return generateFallbackItinerary(destination)
   }
   const prompt = `你是资深旅行达人，为朋友写一份超详细的自由行攻略。
