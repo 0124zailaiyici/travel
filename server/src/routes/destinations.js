@@ -216,9 +216,12 @@ router.get('/:id', async (req, res) => {
   // cache TTL: regenerate DeepSeek data after N days
   const CACHE_TTL_DAYS = 7
   const cached = dest.id?.startsWith('d') ? db.prepare('SELECT COUNT(*) as c FROM itineraries WHERE destination_id = ? AND updated_at > datetime(\'now\', ?)').get(dest.id, '-' + CACHE_TTL_DAYS + ' days') : { c: 0 }
+  console.log('ROUTE:', dest.id, dest.name, 'cached.c=', cached.c)
   let itinerary
   if (!(cached.c > 0) && dest.id?.startsWith('d')) {
+    console.log('ROUTE: generating itinerary for', dest.id)
     const gen = await generateItinerary({ ...dest, highlights, tags })
+    console.log('ROUTE: generated, gen.itinerary?', !!gen.itinerary, 'tips?', gen.tips?.length)
     let days = gen.itinerary
     if (days && !Array.isArray(days)) days = Object.values(days)
     const itin = days || []
