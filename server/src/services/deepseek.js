@@ -48,6 +48,7 @@ export async function generateItinerary(destination) {
       timeout: 15000
     })
     const raw = data.choices[0].message.content
+    console.log('DS raw length:', raw.length, 'preview:', raw.slice(0, 120))
     try { return JSON.parse(raw) } catch (e) {
       console.error('DeepSeek bad JSON (len=' + raw.length + '):', raw.slice(0, 200))
       // attempt to repair truncated JSON

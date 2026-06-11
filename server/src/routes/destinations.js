@@ -222,6 +222,9 @@ router.get('/:id', async (req, res) => {
     console.log('ROUTE: generating itinerary for', dest.id)
     const gen = await generateItinerary({ ...dest, highlights, tags })
     console.log('ROUTE: generated, gen.itinerary?', !!gen.itinerary, 'tips?', gen.tips?.length)
+    console.log('ROUTE: gen keys:', Object.keys(gen).join(','))
+    if (gen.itinerary && gen.itinerary[0]) console.log('ROUTE: first title:', gen.itinerary[0].title)
+    console.log('ROUTE: gen.budget type:', typeof gen.budget, gen.budget ? Object.keys(gen.budget||{}).join(',') : 'none')
     let days = gen.itinerary
     if (days && !Array.isArray(days)) days = Object.values(days)
     const itin = days || []
