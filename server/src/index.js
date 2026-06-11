@@ -34,8 +34,9 @@ app.get('/api/health', (req, res) => {
 })
 
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err)
-  res.status(500).json({ error: err.message || 'Internal server error' })
+  console.error('Unhandled error:', err.type || err.message)
+  if (res.headersSent) return
+  res.status(err.status || 500).json({ error: '服务器错误' })
 })
 
 process.on('uncaughtException', (err) => {
