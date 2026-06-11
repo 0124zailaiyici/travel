@@ -40,14 +40,21 @@ export async function generateItinerary(destination) {
     const { data } = await axios.post(`${DS_BASE}/chat/completions`, {
       model: 'deepseek-chat',
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.8,
-      max_tokens: 4000,
+      temperature: 0.7,
+      max_tokens: 8192,
       response_format: { type: 'json_object' }
     }, {
       headers: { 'Authorization': `Bearer ${DS_KEY}`, 'Content-Type': 'application/json' },
-      timeout: 8000
+      timeout: 15000
     })
-    return JSON.parse(data.choices[0].message.content)
+    const raw = data.choices[0].message.content
+    try { return JSON.parse(raw) } catch (e) {
+      console.error('DeepSeek bad JSON (len=' + raw.length + '):', raw.slice(0, 200))
+      // attempt to repair truncated JSON
+      const repaired = raw.replace(/,\s*$/, '').replace(/\}\s*$/, '').replace(/\][^}]*$/, ']')
+      try { return JSON.parse(repaired) } catch {}
+      throw e
+    }
   } catch (e) {
     console.error('DeepSeek API error:', e.message)
     return generateFallbackItinerary(destination)
