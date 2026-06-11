@@ -449,15 +449,13 @@ async function toggleFav() {
 onLoad(async (o) => {
   if (!o.id) return
   try {
-    const realUid = await ensureUserId()
+    const [realUid, loc] = await Promise.all([ensureUserId().catch(() => null), getLocation().catch(() => ({}))])
     if (realUid) uid.value = realUid
-    const loc = await getLocation(); const data = await api.getDetail(o.id, loc)
-    detail.value = data
-    const favs = await api.syncGetFavs(uid.value)
-    isFav.value = favs.some(d => d.id === data.id)
-    expandedDays.value = data.itinerary?.map(() => true) || []
-    loadComments()
-    api.postHistory(uid.value, o.id).catch(() => {})
+    Promise.all([
+      api.getDetail(o.id, loc).then(data => { detail.value = data; expandedDays.value = data.itinerary?.map(() => true) || []; loadComments() }),
+      realUid && api.syncGetFavs(realUid).then(favs => { if (detail.value.id) isFav.value = favs.some(d => d.id === detail.value.id) }),
+      realUid && api.postHistory(realUid, o.id).catch(() => {})
+    ]).catch(e => { console.error(e); uni.showToast({ title:'加载失败', icon:'none' }) })
   } catch(e) { console.error(e); uni.showToast({ title:'加载失败', icon:'none' }) }
 })
 onShareAppMessage(() => ({
