@@ -3,21 +3,29 @@ import { getApiBase, ensureBaseDetected } from '../config.js'
 async function request(url, data = {}, method = 'GET') {
   await ensureBaseDetected()
   const BASE = getApiBase() + '/api'
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: BASE + url,
-      data, method, timeout: 10000,
-      success: (res) => {
-        const d = res.data
-        if (d && typeof d === 'object' && !Array.isArray(d) && 'list' in d) return resolve(d)
-        resolve(d)
-      },
-      fail: () => {
+  for (let i = 0; i < 3; i++) {
+    try {
+      const res = await new Promise((resolve, reject) => {
+        uni.request({
+          url: BASE + url,
+          data, method, timeout: 10000,
+          success: (res) => {
+            const d = res.data
+            if (d && typeof d === 'object' && !Array.isArray(d) && 'list' in d) return resolve(d)
+            resolve(d)
+          },
+          fail: () => reject(new Error('request fail'))
+        })
+      })
+      return res
+    } catch (e) {
+      if (i < 2) await new Promise(r => setTimeout(r, 1000))
+      else {
         uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
-        reject(new Error('request fail'))
+        throw e
       }
-    })
-  })
+    }
+  }
 }
 
 export const api = {
