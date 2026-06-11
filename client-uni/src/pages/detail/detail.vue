@@ -448,15 +448,19 @@ async function toggleFav() {
 
 onLoad(async (o) => {
   if (!o.id) return
-  try {
-    const [realUid, loc] = await Promise.all([ensureUserId().catch(() => null), getLocation().catch(() => ({}))])
-    if (realUid) uid.value = realUid
-    Promise.all([
-      api.getDetail(o.id, loc).then(data => { detail.value = data; expandedDays.value = data.itinerary?.map(() => true) || []; loadComments() }),
-      realUid && api.syncGetFavs(realUid).then(favs => { if (detail.value.id) isFav.value = favs.some(d => d.id === detail.value.id) }),
-      realUid && api.postHistory(realUid, o.id).catch(() => {})
-    ]).catch(e => { console.error(e); uni.showToast({ title:'加载失败', icon:'none' }) })
-  } catch(e) { console.error(e); uni.showToast({ title:'加载失败', icon:'none' }) }
+  const [realUid, loc] = await Promise.all([ensureUserId().catch(() => null), getLocation().catch(() => ({}))])
+  if (realUid) uid.value = realUid
+  const [data, favs] = await Promise.all([
+    api.getDetail(o.id, loc).catch(() => null),
+    realUid ? api.syncGetFavs(realUid).catch(() => []) : Promise.resolve([])
+  ])
+  if (data) {
+    detail.value = data
+    expandedDays.value = data.itinerary?.map(() => true) || []
+  }
+  if (favs.length && data) isFav.value = favs.some(d => d.id === data.id)
+  if (data) loadComments()
+  if (realUid) api.postHistory(realUid, o.id).catch(() => {})
 })
 onShareAppMessage(() => ({
   title: detail.value.name + ' - 花期',
