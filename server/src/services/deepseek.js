@@ -45,7 +45,7 @@ export async function generateItinerary(destination) {
       response_format: { type: 'json_object' }
     }, {
       headers: { 'Authorization': `Bearer ${DS_KEY}`, 'Content-Type': 'application/json' },
-      timeout: 60000
+      timeout: 10000
     })
     return JSON.parse(data.choices[0].message.content)
   } catch (e) {
