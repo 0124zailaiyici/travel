@@ -147,8 +147,9 @@ export function seedData() {
   const insertBudget = db.prepare(
     'INSERT INTO budgets (id, destination_id, category, amount) VALUES (?, ?, ?, ?)'
   )
-  const insertItin = db.prepare('INSERT INTO itineraries (id, destination_id, day_number, title, morning, afternoon, evening, meals, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime(\'now\'))')
+  const insertItin = db.prepare('INSERT INTO itineraries (id, destination_id, day_number, title, morning, afternoon, evening, meals, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
   const insertTip = db.prepare('INSERT INTO tips (id, destination_id, content, sort_order) VALUES (?, ?, ?, ?)')
+  const oldDate = '2020-01-01 00:00:00'
 
   const tx = db.transaction(() => {
     for (const t of themes) {
@@ -166,12 +167,12 @@ export function seedData() {
           insertBudget.run(uuid(), d.id, cat, amt)
         }
       }
-      // seed fallback itinerary so first visit is instant
+      // seed fallback with old timestamp so DeepSeek retries on first visit
       const days = d.duration || 2
       const fi = fallbackItinerary(d, days)
       for (let i = 0; i < fi.length; i++) {
         const day = fi[i]
-        insertItin.run(uuid(), d.id, i + 1, day.title, day.morning, day.afternoon, day.evening, JSON.stringify(day.meals))
+        insertItin.run(uuid(), d.id, i + 1, day.title, day.morning, day.afternoon, day.evening, JSON.stringify(day.meals), oldDate)
       }
       const ftips = ['建议提前预订住宿，旺季价格翻倍', '关注天气变化，带好防晒/保暖用品', '下载当地离线地图，部分区域信号弱']
       for (let i = 0; i < ftips.length; i++) {
