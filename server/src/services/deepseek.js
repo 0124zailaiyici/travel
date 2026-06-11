@@ -3,15 +3,11 @@ import axios from 'axios'
 
 const DS_KEY = process.env.DEEPSEEK_KEY
 const DS_BASE = 'https://api.deepseek.com'
-console.log('DS init: key?', !!DS_KEY, 'len:', (DS_KEY||'').length)
 
 export async function generateItinerary(destination) {
-  console.log('DS fn: key=|' + DS_KEY + '| len=' + DS_KEY.length + ' type=' + typeof DS_KEY)
   if (!DS_KEY || DS_KEY === 'your_deepseek_key') {
-    console.log('DS: key invalid, using fallback')
     return generateFallbackItinerary(destination)
   }
-  console.log('DS: key check passed, building prompt...')
   const prompt = `你是资深旅行达人，为朋友写一份超详细的自由行攻略。
 
 目的地：${destination.name}
@@ -50,10 +46,9 @@ export async function generateItinerary(destination) {
       response_format: { type: 'json_object' }
     }, {
       headers: { 'Authorization': `Bearer ${DS_KEY}`, 'Content-Type': 'application/json' },
-      timeout: 15000
+      timeout: 60000
     })
     const raw = data.choices[0].message.content
-    console.log('DS raw length:', raw.length, 'preview:', raw.slice(0, 120))
     try { return JSON.parse(raw) } catch (e) {
       console.error('DeepSeek bad JSON (len=' + raw.length + '):', raw.slice(0, 200))
       // attempt to repair truncated JSON

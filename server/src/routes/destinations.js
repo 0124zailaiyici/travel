@@ -216,63 +216,42 @@ router.get('/:id', async (req, res) => {
   // cache TTL: regenerate DeepSeek data after N days
   const CACHE_TTL_DAYS = 7
   const cached = dest.id?.startsWith('d') ? db.prepare('SELECT COUNT(*) as c FROM itineraries WHERE destination_id = ? AND updated_at > datetime(\'now\', ?)').get(dest.id, '-' + CACHE_TTL_DAYS + ' days') : { c: 0 }
-  console.log('ROUTE:', dest.id, dest.name, 'cached.c=', cached.c)
   let itinerary
+  // Stale itinerary: generate AI in background, serve cached data now
   if (!(cached.c > 0) && dest.id?.startsWith('d')) {
-    console.log('ROUTE: generating itinerary for', dest.id)
-    let gen
-    try {
-      gen = await generateItinerary({ ...dest, highlights, tags })
-    } catch (e) {
-      console.log('ROUTE: generateItinerary THREW:', e.message)
-      gen = null
-    }
-    console.log('ROUTE: generated, gen.itinerary?', !!gen?.itinerary, 'tips?', gen?.tips?.length)
-    if (gen) {
-      console.log('ROUTE: gen keys:', Object.keys(gen).join(','))
-      if (gen.itinerary && gen.itinerary[0]) console.log('ROUTE: first title:', gen.itinerary[0].title)
-      console.log('ROUTE: gen.budget type:', typeof gen.budget, gen.budget ? Object.keys(gen.budget||{}).join(',') : 'none')
-      if (gen.tips) console.log('ROUTE: first tip:', gen.tips[0])
-    }
-    if (!gen) return
-    let days = gen.itinerary
-    if (days && !Array.isArray(days)) days = Object.values(days)
-    const itin = days || []
-    // detect fallback: template has "第N天 探索" title, AI has creative titles
-    const isFallback = itin.length > 0 && typeof itin[0].title === 'string' && itin[0].title.includes('探索')
-    const tx = db.transaction(() => {
-      db.prepare('DELETE FROM itineraries WHERE destination_id = ?').run(dest.id)
-      db.prepare('DELETE FROM tips WHERE destination_id = ?').run(dest.id)
-      db.prepare('DELETE FROM budgets WHERE destination_id = ? AND category IN (?, ?)').run(dest.id, '_detail', '_transport')
-      const insertDay = db.prepare('INSERT INTO itineraries (id, destination_id, day_number, title, morning, afternoon, evening, meals, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      for (let i = 0; i < itin.length; i++) {
-        const day = itin[i]
-        insertDay.run(uuid(), dest.id, i + 1, day.title || '', day.morning || '', day.afternoon || '', day.evening || '', JSON.stringify(day.meals || []), isFallback ? '2020-01-01' : undefined)
-      }
-      if (gen.tips) {
-        const insertTip = db.prepare('INSERT INTO tips (id, destination_id, content, sort_order) VALUES (?, ?, ?, ?)')
-        for (let i = 0; i < gen.tips.length; i++) {
-          insertTip.run(uuid(), dest.id, gen.tips[i], i)
+    generateItinerary({ ...dest, highlights, tags }).then(gen => {
+      if (!gen || !gen.itinerary) return
+      let days = gen.itinerary
+      if (days && !Array.isArray(days)) days = Object.values(days)
+      const itin = days
+      if (!itin.length) return
+      const isFallback = itin[0].title && itin[0].title.includes('探索')
+      const tx = db.transaction(() => {
+        db.prepare('DELETE FROM itineraries WHERE destination_id = ?').run(dest.id)
+        db.prepare('DELETE FROM tips WHERE destination_id = ?').run(dest.id)
+        db.prepare('DELETE FROM budgets WHERE destination_id = ? AND category IN (?, ?)').run(dest.id, '_detail', '_transport')
+        const insertDay = db.prepare('INSERT INTO itineraries (id, destination_id, day_number, title, morning, afternoon, evening, meals, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        for (let i = 0; i < itin.length; i++) {
+          const day = itin[i]
+          insertDay.run(uuid(), dest.id, i + 1, day.title || '', day.morning || '', day.afternoon || '', day.evening || '', JSON.stringify(day.meals || []), isFallback ? '2020-01-01' : undefined)
         }
-      }
-      if (gen.budget) {
-        db.prepare('INSERT INTO budgets (id, destination_id, category, amount) VALUES (?, ?, ?, ?)').run(uuid(), dest.id, '_detail', JSON.stringify(gen.budget))
-      }
-      if (gen.transport) {
-        db.prepare('INSERT INTO budgets (id, destination_id, category, amount) VALUES (?, ?, ?, ?)').run(uuid(), dest.id, '_transport', JSON.stringify(gen.transport))
-      }
-    })
-    tx()
-    itinerary = itin
+        if (gen.tips) {
+          const insertTip = db.prepare('INSERT INTO tips (id, destination_id, content, sort_order) VALUES (?, ?, ?, ?)')
+          for (let i = 0; i < gen.tips.length; i++) insertTip.run(uuid(), dest.id, gen.tips[i], i)
+        }
+        if (gen.budget) db.prepare('INSERT INTO budgets (id, destination_id, category, amount) VALUES (?, ?, ?, ?)').run(uuid(), dest.id, '_detail', JSON.stringify(gen.budget))
+        if (gen.transport) db.prepare('INSERT INTO budgets (id, destination_id, category, amount) VALUES (?, ?, ?, ?)').run(uuid(), dest.id, '_transport', JSON.stringify(gen.transport))
+      })
+      tx()
+    }).catch(() => {})
   }
-  if (!itinerary) {
-    const dbIt = db.prepare('SELECT * FROM itineraries WHERE destination_id = ? ORDER BY day_number').all(dest.id)
-    itinerary = dbIt.map(d => {
-      let meals = JSON.parse(d.meals || '[]')
-      if (typeof meals === 'string') meals = meals.split(/[；;]/).map(s => s.trim()).filter(Boolean)
-      return { title: d.title, morning: d.morning, afternoon: d.afternoon, evening: d.evening, meals }
-    })
-  }
+  // Always serve from DB (existing or pre-seeded fallback)
+  const dbIt = db.prepare('SELECT * FROM itineraries WHERE destination_id = ? ORDER BY day_number').all(dest.id)
+  itinerary = dbIt.map(d => {
+    let meals = JSON.parse(d.meals || '[]')
+    if (typeof meals === 'string') meals = meals.split(/[；;]/).map(s => s.trim()).filter(Boolean)
+    return { title: d.title, morning: d.morning, afternoon: d.afternoon, evening: d.evening, meals }
+  })
 
   // always read fresh from DB
   const tips = db.prepare('SELECT content FROM tips WHERE destination_id = ? ORDER BY sort_order').all(dest.id).map(t => t.content)
