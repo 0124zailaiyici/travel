@@ -222,14 +222,16 @@ router.get('/:id', async (req, res) => {
     let days = gen.itinerary
     if (days && !Array.isArray(days)) days = Object.values(days)
     const itin = days || []
+    // detect fallback: template has "第N天 探索" title, AI has creative titles
+    const isFallback = itin.length > 0 && typeof itin[0].title === 'string' && itin[0].title.includes('探索')
     const tx = db.transaction(() => {
       db.prepare('DELETE FROM itineraries WHERE destination_id = ?').run(dest.id)
       db.prepare('DELETE FROM tips WHERE destination_id = ?').run(dest.id)
       db.prepare('DELETE FROM budgets WHERE destination_id = ? AND category IN (?, ?)').run(dest.id, '_detail', '_transport')
-      const insertDay = db.prepare('INSERT INTO itineraries (id, destination_id, day_number, title, morning, afternoon, evening, meals) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      const insertDay = db.prepare('INSERT INTO itineraries (id, destination_id, day_number, title, morning, afternoon, evening, meals, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
       for (let i = 0; i < itin.length; i++) {
         const day = itin[i]
-        insertDay.run(uuid(), dest.id, i + 1, day.title || '', day.morning || '', day.afternoon || '', day.evening || '', JSON.stringify(day.meals || []))
+        insertDay.run(uuid(), dest.id, i + 1, day.title || '', day.morning || '', day.afternoon || '', day.evening || '', JSON.stringify(day.meals || []), isFallback ? '2020-01-01' : undefined)
       }
       if (gen.tips) {
         const insertTip = db.prepare('INSERT INTO tips (id, destination_id, content, sort_order) VALUES (?, ?, ?, ?)')
