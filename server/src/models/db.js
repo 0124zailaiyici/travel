@@ -20,6 +20,20 @@ export function getDb() {
   return db
 }
 
+function fallbackItinerary(dest, days) {
+  const itinerary = []
+  for (let i = 1; i <= days; i++) {
+    itinerary.push({
+      title: `第${i}天 探索${dest.name}`,
+      morning: `前往${dest.name}（${dest.address || '当地'}），游览核心景区，欣赏${(dest.highlights || []).slice(0, 2).join('、') || '主要景点'}。建议上午出行，避开人流高峰。`,
+      afternoon: '周边探索与拍照打卡，品尝当地特色小吃。可询问当地居民推荐小众景点。',
+      evening: '返回住处休息，整理照片。如果精力充沛，可夜游当地特色街区。',
+      meals: ['早餐：酒店/民宿或附近早餐店', '午餐：景区周边餐厅', '晚餐：当地特色餐厅']
+    })
+  }
+  return itinerary
+}
+
 function initSchema() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS themes (
@@ -90,7 +104,31 @@ export function seedData() {
 
   const themeCount = db.prepare('SELECT COUNT(*) as c FROM themes').get().c
   if (themeCount > 0) {
-    console.log('Database already seeded')
+    const itinCount = db.prepare('SELECT COUNT(*) as c FROM itineraries').get().c
+    if (itinCount > 0) {
+      console.log('Database already seeded')
+      return
+    }
+    // seed missing itineraries for existing DB
+    const dests = JSON.parse(fs.readFileSync(destsPath, 'utf-8'))
+    const insertItin = db.prepare('INSERT OR IGNORE INTO itineraries (id, destination_id, day_number, title, morning, afternoon, evening, meals, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime(\'now\'))')
+    const insertTip = db.prepare('INSERT OR IGNORE INTO tips (id, destination_id, content, sort_order) VALUES (?, ?, ?, ?)')
+    const tx = db.transaction(() => {
+      for (const d of dests) {
+        const days = d.duration || 2
+        const fi = fallbackItinerary(d, days)
+        for (let i = 0; i < fi.length; i++) {
+          const day = fi[i]
+          insertItin.run(uuid(), d.id, i + 1, day.title, day.morning, day.afternoon, day.evening, JSON.stringify(day.meals))
+        }
+        const ftips = ['建议提前预订住宿，旺季价格翻倍', '关注天气变化，带好防晒/保暖用品', '下载当地离线地图，部分区域信号弱']
+        for (let i = 0; i < ftips.length; i++) {
+          insertTip.run(uuid(), d.id, ftips[i], i)
+        }
+      }
+    })
+    tx()
+    console.log('Seeded missing itineraries for', dests.length, 'destinations')
     return
   }
 
@@ -109,6 +147,8 @@ export function seedData() {
   const insertBudget = db.prepare(
     'INSERT INTO budgets (id, destination_id, category, amount) VALUES (?, ?, ?, ?)'
   )
+  const insertItin = db.prepare('INSERT INTO itineraries (id, destination_id, day_number, title, morning, afternoon, evening, meals, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime(\'now\'))')
+  const insertTip = db.prepare('INSERT INTO tips (id, destination_id, content, sort_order) VALUES (?, ?, ?, ?)')
 
   const tx = db.transaction(() => {
     for (const t of themes) {
@@ -125,6 +165,17 @@ export function seedData() {
         for (const [cat, amt] of Object.entries(d.budget)) {
           insertBudget.run(uuid(), d.id, cat, amt)
         }
+      }
+      // seed fallback itinerary so first visit is instant
+      const days = d.duration || 2
+      const fi = fallbackItinerary(d, days)
+      for (let i = 0; i < fi.length; i++) {
+        const day = fi[i]
+        insertItin.run(uuid(), d.id, i + 1, day.title, day.morning, day.afternoon, day.evening, JSON.stringify(day.meals))
+      }
+      const ftips = ['建议提前预订住宿，旺季价格翻倍', '关注天气变化，带好防晒/保暖用品', '下载当地离线地图，部分区域信号弱']
+      for (let i = 0; i < ftips.length; i++) {
+        insertTip.run(uuid(), d.id, ftips[i], i)
       }
     }
   })
