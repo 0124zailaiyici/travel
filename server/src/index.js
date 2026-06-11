@@ -14,7 +14,12 @@ const app = express()
 const PORT = process.env.PORT || 3002
 
 app.use(cors())
-app.use(express.json({ limit: '10mb' }))
+app.use((req, res, next) => {
+  express.json({ limit: '10mb' })(req, res, (err) => {
+    if (err) return res.status(400).json({ error: '无效的请求格式' })
+    next()
+  })
+})
 
 // init db & seed
 getDb()
@@ -34,9 +39,9 @@ app.get('/api/health', (req, res) => {
 })
 
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err.type || err.message)
+  console.error('Error:', err.type || err.message)
   if (res.headersSent) return
-  res.status(err.status || 500).json({ error: '服务器错误' })
+  try { res.status(err.status || 500).json({ error: '服务器错误' }) } catch {}
 })
 
 process.on('uncaughtException', (err) => {
@@ -48,9 +53,11 @@ process.on('unhandledRejection', (err) => {
 })
 
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`)
   })
+  server.keepAliveTimeout = 65000
+  server.headersTimeout = 66000
 }
 
 export default app
