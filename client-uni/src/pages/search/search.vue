@@ -269,11 +269,11 @@ watch([list, activeDist], () => {
 
 onPullDownRefresh(() => (searched.value ? doSearch() : loadNearby()).finally(() => uni.stopPullDownRefresh()))
 
-let _navLock = false
 function goDetail(id) {
-  if (_navLock) return
-  _navLock = true
-  uni.navigateTo({ url: `/pages/detail/detail?id=${id}`, complete: () => { _navLock = false } })
+  const g = typeof globalThis !== 'undefined' ? globalThis : window
+  if (g.__navLock) return
+  g.__navLock = true
+  uni.navigateTo({ url: `/pages/detail/detail?id=${id}`, complete: () => setTimeout(() => { g.__navLock = false }, 500) })
 }
 function goBack() { uni.navigateBack() }
 </script>
