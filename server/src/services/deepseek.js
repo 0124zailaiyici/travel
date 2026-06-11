@@ -6,6 +6,7 @@ const DS_BASE = 'https://api.deepseek.com'
 console.log('DS init: key?', !!DS_KEY, 'len:', (DS_KEY||'').length)
 
 export async function generateItinerary(destination) {
+  console.log('DS fn: key=|' + DS_KEY + '| len=' + DS_KEY.length + ' type=' + typeof DS_KEY)
   if (!DS_KEY || DS_KEY === 'your_deepseek_key') {
     console.log('DS: key invalid, using fallback')
     return generateFallbackItinerary(destination)
