@@ -6,7 +6,7 @@ export function getApiBase() {
 }
 
 async function _detect() {
-  const candidates = ['http://47.106.126.50:3002', 'http://10.38.148.114:3002', 'http://192.169.3.14:3002', 'http://localhost:3002']
+  const candidates = ['https://surely-for-discipline-interracial.trycloudflare.com', 'http://47.106.126.50:3002', 'http://10.38.148.114:3002', 'http://192.169.3.14:3002', 'http://localhost:3002']
   for (const url of candidates) {
     try {
       await uni.request({ url: url + '/api/health', timeout: 1000 })
