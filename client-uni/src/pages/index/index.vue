@@ -106,7 +106,12 @@ function retryLocation() {
 function goFavs() { uni.navigateTo({ url: '/pages/favorites/favorites' }) }
 function goSearch() { uni.navigateTo({ url: '/pages/search/search' }) }
 function searchTheme(n) { uni.navigateTo({ url: `/pages/search/search?q=${n}` }) }
-function goDetail(id) { uni.navigateTo({ url: `/pages/detail/detail?id=${id}` }) }
+let _navLock = false
+function goDetail(id) {
+  if (_navLock) return
+  _navLock = true
+  uni.navigateTo({ url: `/pages/detail/detail?id=${id}`, complete: () => { _navLock = false } })
+}
 </script>
 
 <style>

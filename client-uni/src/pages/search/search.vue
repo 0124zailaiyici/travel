@@ -269,7 +269,12 @@ watch([list, activeDist], () => {
 
 onPullDownRefresh(() => (searched.value ? doSearch() : loadNearby()).finally(() => uni.stopPullDownRefresh()))
 
-function goDetail(id) { uni.navigateTo({ url: `/pages/detail/detail?id=${id}` }) }
+let _navLock = false
+function goDetail(id) {
+  if (_navLock) return
+  _navLock = true
+  uni.navigateTo({ url: `/pages/detail/detail?id=${id}`, complete: () => { _navLock = false } })
+}
 function goBack() { uni.navigateBack() }
 </script>
 

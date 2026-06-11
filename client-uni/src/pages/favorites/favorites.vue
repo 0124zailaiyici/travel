@@ -30,7 +30,12 @@ onMounted(async () => {
   } catch(e) { console.error(e); uni.showToast({ title: '加载失败', icon: 'none' }) }
   finally { loading.value = false }
 })
-function goDetail(id) { uni.navigateTo({ url: `/pages/detail/detail?id=${id}` }) }
+let _navLock = false
+function goDetail(id) {
+  if (_navLock) return
+  _navLock = true
+  uni.navigateTo({ url: `/pages/detail/detail?id=${id}`, complete: () => { _navLock = false } })
+}
 </script>
 
 <style>
