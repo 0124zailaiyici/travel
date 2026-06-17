@@ -10,6 +10,16 @@
         <text class="sb-arrow">›</text>
       </view>
 
+      <!-- === AI GENERATING BANNER === -->
+      <view class="gen-banner" v-if="detail.generating">
+        <text class="gen-icon">🤖</text>
+        <view class="gen-body">
+          <text class="gen-tt">AI 正在生成个性化行程</text>
+          <text class="gen-sub">约30秒后刷新查看 · 当前为通用模板</text>
+        </view>
+        <view class="gen-spinner"></view>
+      </view>
+
       <template v-if="detail.name">
         <view class="hero-w">
           <view class="hi">
@@ -727,6 +737,15 @@ async function saveImage(canvasNode, mode) {
 /* nav button */
 .ab { padding: 12rpx 24rpx 40rpx; }
 .nav-bt { width: 100%; padding: 26rpx; background: linear-gradient(135deg,#C4817A,#9A5E58); color: #fff; border: none; border-radius: 50rpx; font-size: 28rpx; font-weight: 600; box-shadow: 0 6rpx 24rpx rgba(196,129,122,0.3); }
+
+/* generating banner */
+.gen-banner { margin: 20rpx 24rpx 0; padding: 22rpx 24rpx; background: linear-gradient(135deg,rgba(91,123,90,0.08),rgba(91,123,90,0.02)); border-radius: 16rpx; display: flex; align-items: center; gap: 14rpx; border: 1rpx solid rgba(91,123,90,0.12); }
+.gen-icon { font-size: 32rpx; flex-shrink: 0; }
+.gen-body { flex: 1; min-width: 0; }
+.gen-tt { font-size: 26rpx; font-weight: 600; color: #5B7B5A; display: block; }
+.gen-sub { font-size: 20rpx; color: #8A7A76; margin-top: 4rpx; display: block; }
+.gen-spinner { width: 16rpx; height: 16rpx; border-radius: 50%; background: #5B7B5A; animation: gen-pulse 1.2s ease-in-out infinite; flex-shrink: 0; }
+@keyframes gen-pulse { 0%,100% { opacity: 0.3; transform: scale(0.8) } 50% { opacity: 1; transform: scale(1.2) } }
 
 /* share banner */
 .share-banner { margin: 20rpx 24rpx 0; padding: 20rpx; background: linear-gradient(135deg,#FAF0EA,#F5E4DC); border-radius: 16rpx; display: flex; align-items: center; gap: 12rpx; }

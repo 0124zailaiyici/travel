@@ -279,8 +279,10 @@ router.get('/:id', async (req, res) => {
   const userRating = ratingRow?.avg ? Math.round(ratingRow.avg * 10) / 10 : null
   const userRatingCount = ratingRow?.cnt || 0
 
+  const generating = cached.c === 0 && dest.id?.startsWith('d')
+
   res.json(addImageUrl({
-    ...dest, highlights, tags, itinerary,
+    ...dest, highlights, tags, itinerary, generating,
     tips, budget, themes, distance, themeIcon, weather, transportDetail, route,
     userRating, userRatingCount
   }))
