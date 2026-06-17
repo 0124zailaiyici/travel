@@ -42,17 +42,18 @@ export async function generateItinerary(destination) {
       model: 'deepseek-chat',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
-      max_tokens: 8192,
+      max_tokens: 16384,
       response_format: { type: 'json_object' }
     }, {
       headers: { 'Authorization': `Bearer ${DS_KEY}`, 'Content-Type': 'application/json' },
       timeout: 60000
     })
     const raw = data.choices[0].message.content
-    try { return JSON.parse(raw) } catch (e) {
-      console.error('DeepSeek bad JSON (len=' + raw.length + '):', raw.slice(0, 200))
-      // attempt to repair truncated JSON
-      const repaired = raw.replace(/,\s*$/, '').replace(/\}\s*$/, '').replace(/\][^}]*$/, ']')
+    // strip control characters that break JSON.parse
+    const cleaned = raw.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '')
+    try { return JSON.parse(cleaned) } catch (e) {
+      console.error('DeepSeek bad JSON (len=' + cleaned.length + '):', cleaned.slice(0, 200))
+      const repaired = cleaned.replace(/,\s*$/, '').replace(/\}\s*$/, '').replace(/\][^}]*$/, ']')
       try { return JSON.parse(repaired) } catch {}
       throw e
     }
