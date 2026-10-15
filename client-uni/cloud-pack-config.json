@@ -1,0 +1,11 @@
+{
+  "project": "D:/demo/AI/my-app/opencode/Travel_planning/client-uni",
+  "platform": "android",
+  "iscustom": false,
+  "safemode": false,
+  "android": {
+    "packagename": "uni.UNIB95181",
+    "androidpacktype": "3",
+    "channels": ""
+  }
+}
