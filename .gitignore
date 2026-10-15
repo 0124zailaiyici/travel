@@ -5,3 +5,9 @@ dist/
 *.log
 server/data/
 .DS_Store
+client-uni/src/services/config.local.js
+client-uni/src/services/config.local.private.js
+client-uni/keystore/
+proxy-worker/.secrets/
+proxy-worker/.wrangler/
+proxy-worker/dist/
