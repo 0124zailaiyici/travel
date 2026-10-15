@@ -14,3 +14,7 @@ proxy-worker/dist/
 
 # 图片生成工具的原始输出（体积大，压缩后的成品在 client-uni/src/static/themes/）
 generate/
+
+# 与本项目无关的第三方项目（自带 .git，被 git 误当成子模块引用；
+# 之前没有 .gitmodules，clone 的人会拿到空目录并报错）
+open-design/

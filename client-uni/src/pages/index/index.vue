@@ -44,7 +44,7 @@
         <text class="section-tt">📅 {{ monthText }}</text>
       </view>
       <view class="sea-list">
-        <DestCard v-for="d in inSeason" :key="d.id" :name="d.name" :description="d.description" :rating="d.rating" :bestSeason="d.best_season" :imageUrl="d.image_url" :fallbackIcon="d.icon || '🌸'" :imgSize="160" :imageRight="true" :showBestSeason="true" :showDistance="false" @tap="goDetail(d.id)" />
+        <DestCard v-for="d in inSeason" :key="d.id" :name="d.name" :description="d.description" :rating="d.rating" :bestSeason="d.best_season" :imageUrl="d.image_url" :fallbackIcon="d.themeIcon || '🌸'" :imgSize="160" :imageRight="true" :showBestSeason="true" :showDistance="false" @tap="goDetail(d.id)" />
       </view>
     </view>
 
@@ -59,7 +59,7 @@
         <text class="ln-text">未能获取位置，以下按热度排序</text>
       </view>
       <view class="nearby-list" v-if="nearby.length">
-        <DestCard v-for="d in nearby" :key="d.id" :name="d.name" :description="d.description || d.address || ''" :rating="d.rating" :distance="d.distance" :imageUrl="d.image_url" :fallbackIcon="d.icon || '🌸'" :showDistance="locState === 'ok'" @tap="goDetail(d.id)" />
+        <DestCard v-for="d in nearby" :key="d.id" :name="d.name" :description="d.description || d.address || ''" :rating="d.rating" :distance="d.distance" :imageUrl="d.image_url" :fallbackIcon="d.themeIcon || '🌸'" :showDistance="locState === 'ok'" @tap="goDetail(d.id)" />
       </view>
       <view class="empty-nearby" v-else-if="locState === 'fail'" @tap="retryLocation">
         <text class="en-icon">📍</text>

@@ -121,8 +121,10 @@ export async function getDrivingRoute(originLat, originLng, destLat, destLng) {
     if (data.status !== 0 || !data.result?.routes?.length) return null
     const route = data.result.routes[0]
     return {
+      // Tencent: distance is METERS, duration is already MINUTES.
+      // Do NOT divide duration by 60 (that under-reported trips by 60x).
       distance: Math.round(route.distance / 1000),
-      duration: Math.round(route.duration / 60),
+      duration: Math.round(route.duration || 0),
       tolls: Math.round((route.tolls || 0) / 100) || 0
     }
   } catch { return null }
@@ -161,7 +163,8 @@ export async function getTransitRoute(originLat, originLng, destLat, destLng, ci
     const distance = t.distance ? Math.round(t.distance / 1000) : 0
     return {
       distance,
-      duration: Math.round((t.duration || 0) / 60),
+      // See getDrivingRoute: duration arrives in minutes already.
+      duration: Math.round(t.duration || 0),
       cost: 0,
       walkingDistance: 0,
       summary: segs.length ? segs.join(' → ') : '公交/地铁/高铁'

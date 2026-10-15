@@ -57,7 +57,7 @@
       </view>
       <view class="nb-section" v-if="nearbyList.length">
         <text class="nb-tt">📍 附近推荐</text>
-        <DestCard v-for="d in nearbyList" :key="d.id" :name="d.name" :description="d.description" :rating="d.rating" :distance="d.distance" :imageUrl="d.image_url" :fallbackIcon="d.icon || '🌸'" :showDistance="true" @tap="goDetail(d.id)" />
+        <DestCard v-for="d in nearbyList" :key="d.id" :name="d.name" :description="d.description" :rating="d.rating" :distance="d.distance" :imageUrl="d.image_url" :fallbackIcon="d.themeIcon || '🌸'" :showDistance="true" @tap="goDetail(d.id)" />
       </view>
       <ShimmerCard v-if="!nbLoaded" :rows="3" :cols="1" :imgSize="180" :lineCount="2" :lineWidths="['w70','w90']" />
     </view>
@@ -86,7 +86,7 @@
 
     <!-- result list -->
     <view class="sp-list" v-if="!loading && searched">
-      <DestCard v-for="d in displayList" :key="d.id" :name="d.name" :description="d.description" :rating="d.rating" :bestSeason="null" :distance="d.distance" :duration="d.duration" :imageUrl="d.image_url" :fallbackIcon="d.icon || '🌸'" :tags="d.tags" :showDistance="true" :showTags="true" @tap="goDetail(d.id)" />
+      <DestCard v-for="d in displayList" :key="d.id" :name="d.name" :description="d.description" :rating="d.rating" :bestSeason="null" :distance="d.distance" :duration="d.duration" :imageUrl="d.image_url" :fallbackIcon="d.themeIcon || '🌸'" :tags="d.tags" :showDistance="true" :showTags="true" @tap="goDetail(d.id)" />
       <view class="sp-more" v-if="displayList.length && hasMore" @tap="loadMore">
         <text v-if="!loadingMore">加载更多…</text>
         <text v-else>加载中…</text>

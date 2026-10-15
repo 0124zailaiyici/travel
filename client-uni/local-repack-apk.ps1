@@ -13,9 +13,17 @@ $sourceManifest = Get-Content -LiteralPath $sourceManifestPath -Raw -Encoding UT
 $appId = [string]$sourceManifest.appid
 $versionName = [string]$sourceManifest.versionName
 $versionCode = [string]$sourceManifest.versionCode
+$packageName = [string]$sourceManifest.'app-plus'.distribute.android.packagename
 
 if (-not $appId -or -not $versionName -or -not $versionCode) {
   throw "manifest.json is missing appid/versionName/versionCode"
+}
+# The Android package name decides whether the APK can overwrite-install over the
+# existing app. A different package name silently becomes a SECOND app, and the
+# only way to "upgrade" is uninstall + reinstall, which wipes favorites/history.
+# So refuse to build unless manifest.json pins it explicitly.
+if (-not $packageName) {
+  throw "manifest.json is missing app-plus.distribute.android.packagename"
 }
 if (-not (Test-Path $wwwSource)) {
   throw "missing $wwwSource; run pnpm run build:app-android first"
@@ -87,6 +95,13 @@ foreach ($requiredPath in @($aapt, $zipalign, $apksigner)) {
   if (-not (Test-Path $requiredPath)) {
     throw "missing required file: $requiredPath"
   }
+}
+
+# Fail fast: check the BASE apk's package name before spending a minute on apktool.
+$baseBadging = (& $aapt dump badging $baseApk.FullName) -join "`n"
+if ($baseBadging -notmatch "package: name='$([regex]::Escape($packageName))'") {
+  $actual = ([regex]::Match($baseBadging, "package: name='([^']+)'")).Groups[1].Value
+  throw "base APK package mismatch: manifest.json pins '$packageName' but $($baseApk.Name) is '$actual'. Installing the result would create a SECOND app instead of upgrading, and the only fix is uninstall + reinstall (wiping favorites/history). Re-run the HBuilderX cloud pack so it honours the pinned packagename."
 }
 
 $timestamp = Get-Date -Format "yyyyMMddHHmmss"
@@ -171,6 +186,11 @@ if ($badgingText -notmatch "versionCode='$versionCode'" -or
     $badgingText -notmatch "versionName='$([regex]::Escape($versionName))'" -or
     $badgingText -notmatch "install-location:'internalOnly'") {
   throw "APK metadata verification failed"
+}
+# Catch a base APK built with a different package name BEFORE shipping it.
+if ($badgingText -notmatch "package: name='$([regex]::Escape($packageName))'") {
+  $actual = ([regex]::Match($badgingText, "package: name='([^']+)'")).Groups[1].Value
+  throw "package name mismatch: manifest.json says '$packageName' but the APK says '$actual'. Installing it would create a second app instead of upgrading; re-run the HBuilderX cloud pack with the pinned packagename."
 }
 
 Write-Host ($badging | Select-String -Pattern "package:|install-location" | Out-String)

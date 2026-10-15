@@ -470,7 +470,7 @@ async function refreshByLocation() {
   uni.showLoading({ title: '按位置生成中…', mask: true })
   let toastTitle = ''
   try {
-    const loc = await getLocation({ timeout: 2500, allowCache: false }).catch(() => userLoc.value)
+    const loc = await getLocation({ timeout: 8000, allowCache: false }).catch(() => userLoc.value)
     userLoc.value = loc
     const full = await api.refreshItinerary({ ...detail.value }, loc)
     if (full) {
@@ -495,12 +495,13 @@ onLoad(async (o) => {
   if (!o.id) return
   uid.value = getUserId()
 
-  // 1) 本地秒开
-  const locPromise = getLocation({ timeout: 1800, allowCache: true }).catch(() => null)
-  const loc = await locPromise
-  userLoc.value = loc
+  // 1) 本地秒开：不阻塞在定位上。
+  //    原实现先 await getLocation(1800ms) 再取详情：冷启动定位来不及，
+  //    loc 为 null 会让「距离」显示成 ?km、驾车/公交路线整块缺失，
+  //    而且页面要白等到定位超时才出内容。
+  const locPromise = getLocation({ timeout: 8000, allowCache: true }).catch(() => null)
   try {
-    const data = await api.getDetailFast(o.id, loc)
+    const data = await api.getDetailFast(o.id, null)
     if (data) {
       detail.value = data
       expandedDays.value = data.itinerary?.map(() => true) || []
@@ -519,16 +520,18 @@ onLoad(async (o) => {
     api.postHistory(realUid, o.id).catch(() => {})
   }).catch(() => {})
 
-  // 3) 天气/路线/AI 后台增强（带用户位置）
-  if (detail.value?.id) {
-    api.enrichDetail({ ...detail.value }, loc, { force: false }).then((full) => {
-      if (!full) return
-      detail.value = { ...detail.value, ...full }
-      if (full.itinerary?.length && (!expandedDays.value || !expandedDays.value.length)) {
-        expandedDays.value = full.itinerary.map(() => true)
-      }
-    }).catch(() => {})
-  }
+  // 3) 天气/路线/AI 后台增强：等定位结果（最长 8s），拿到才补距离与路线
+  locPromise.then((loc) => {
+    userLoc.value = loc
+    if (!detail.value?.id) return null
+    return api.enrichDetail({ ...detail.value }, loc, { force: false })
+  }).then((full) => {
+    if (!full) return
+    detail.value = { ...detail.value, ...full }
+    if (full.itinerary?.length && (!expandedDays.value || !expandedDays.value.length)) {
+      expandedDays.value = full.itinerary.map(() => true)
+    }
+  }).catch(() => {})
 
   // 4) 评论
   loadComments().catch(() => {})
