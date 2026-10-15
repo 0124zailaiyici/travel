@@ -148,6 +148,20 @@ export default {
 - Android SDK `build-tools`（`aapt.exe` / `zipalign.exe` / `apksigner.bat`）
 - 一个已用 HBuilderX 云打包产出的**基础 APK**（`dist/release/apk/`，脚本按正则自动挑选）
 
+### 基础 APK 是怎么选的
+
+`local-repack-apk.ps1` 只认这个文件名模式：
+
+```
+^__UNI__5B95181__\d{14}\.apk$      # 例：__UNI__5B95181__20260716014100.apk
+```
+
+**14 位时间戳这一条同时起到了排除作用**——本脚本产出的 `*_installfix.apk` 不匹配，
+所以重复运行不会把上一次的成品当成基础包（那会导致 www 被套娃打包）。
+
+选中目录里**最新的**云包。若目录里一个云包都没有，脚本会抛
+`no original cloud APK found`，此时需要重新用 HBuilderX 云打包。
+
 ### 流程
 
 ```powershell
@@ -160,6 +174,9 @@ pnpm run build:app-android      # 产出 dist/build/app
 校验 v1/v2/v3 签名。
 
 或用 `build-apk.bat` 一步到位。
+
+> `dist/cache/` 是 apktool 的解包中间产物，每次打包都会重建，可以随时删除
+> （实测约 700 MB）。
 
 ### 安装
 
@@ -280,3 +297,28 @@ pnpm run build:h5      # 或 pnpm run dev:h5
 
 注意：H5 与 App 端的网络行为可能不同（浏览器不受 `mp-weixin.setting.urlCheck`
 影响，也不受 App 端 webview 限制），**排查网络问题必须以真机 APK 为准**。
+
+---
+
+## 九、真机验证记录
+
+最后一次真机验证：2026-10-15，vivo V2458A / Android 16 (SDK 36)。
+
+| 验证项 | 结果 |
+|---|---|
+| 启动 | 无崩溃、无 `AndroidRuntime` 错误 |
+| 主题/场景配图 | 九寨沟→红叶、三亚→海岛、西湖→樱花、桂林漓江→喀斯特山水、黄果树瀑布→瀑布、龙脊梯田→梯田，全部正确 |
+| 定位 | 首页显示「📍 附近推荐」而非兜底的「热门推荐」 |
+| 地图直连 | 返回南宁本地目的地并带真实距离（青秀山 6–8km、荫生植物园 7km、云顶观光 11km） |
+| 设置页 | 默认 `https://api.deepseek.com` / `deepseek-chat`，地图 Key 已生效 |
+
+### 两个只有真机才能发现的问题
+
+记录在此，避免以后重蹈：
+
+1. **配图错配**：电脑端数据检查全 PASS，但装到手机上才发现黄果树瀑布显示的是沙滩。
+   原因是 `bundle.json` 把 `t3 海岛` 当成了"水景"兜底标签，而代码用 `theme_ids[0]`
+   推断配图——**数据没错，错的是推断方式**。这类问题静态检查抓不到。
+2. **定位超时**：原 1800ms 在冷启动时拿不到位置，界面静默退化成"前 8 个目的地"
+   却仍标着「附近推荐」。改成 8000ms 后真机定位正常。
+
