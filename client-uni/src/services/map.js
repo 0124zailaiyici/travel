@@ -60,9 +60,11 @@ async function directTencent(path, params = {}) {
     const route = res?.result?.routes?.[0]
     if (res?.status !== 0 || !route) throw new Error(res?.message || '腾讯路线查询失败')
     if (kind === 'driving') {
+      // Tencent direction API: distance is meters, duration is already MINUTES.
+      // Do NOT divide duration by 60 -- that understates it 60x.
       return { route: {
         distance: Math.round((route.distance || 0) / 1000),
-        duration: Math.round((route.duration || 0) / 60),
+        duration: Math.round(route.duration || 0),
         tolls: Math.round((route.tolls || 0) / 100) || 0,
         provider: 'tencent-direct',
       } }
@@ -76,7 +78,7 @@ async function directTencent(path, params = {}) {
     }
     return { route: {
       distance: route.distance ? Math.round(route.distance / 1000) : 0,
-      duration: Math.round((route.duration || 0) / 60),
+      duration: Math.round(route.duration || 0),
       summary: segs.length ? segs.join(' → ') : '公交/地铁/步行',
       provider: 'tencent-direct',
     } }
