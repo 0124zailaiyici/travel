@@ -1,5 +1,5 @@
 import { httpPost } from './http.js'
-import { getProxyBase, getRuntimeConfig, hasProxy, getAiModel } from './config.js'
+import { getRuntimeConfig, getAiModel } from './config.js'
 import { cacheGet, cacheSet, cacheDel } from './cache.js'
 
 function chatEndpoint(base) {
@@ -170,7 +170,7 @@ async function callDirectAi(prompt) {
   const cfg = getRuntimeConfig()
   const key = cfg.deepseekKey
   if (!key) return null
-  const base = (cfg.deepseekBase || 'https://sub2api.zailaiyici.xyz').replace(/\/$/, '')
+  const base = (cfg.deepseekBase || 'https://api.deepseek.com').replace(/\/$/, '')
   const model = getAiModel()
   const data = await httpPost(chatEndpoint(base), {
     model,
@@ -204,47 +204,10 @@ export async function generateItinerary(destination, options = {}) {
   const prompt = buildPrompt(destination, userLoc)
 
   try {
-    let content = ''
     const cfg = getRuntimeConfig()
-
-    if (cfg.deepseekKey) {
-      content = await callDirectAi(prompt)
-    } else if (hasProxy()) {
-      const data = await httpPost(getProxyBase() + '/ai/itinerary', {
-        model: getAiModel(),
-        destination: {
-          id: destination.id,
-          name: destination.name,
-          address: destination.address,
-          highlights: destination.highlights || [],
-          best_season: destination.best_season,
-          duration: destination.duration,
-          distance: destination.distance,
-          lat: destination.lat,
-          lng: destination.lng,
-        },
-        userLoc: userLoc ? {
-          lat: userLoc.lat,
-          lng: userLoc.lng,
-          city: userLoc.city || '',
-          address: userLoc.address || '',
-        } : null,
-        force,
-        prompt,
-      }, { 'Content-Type': 'application/json' }, 50000)
-
-      if (data?.itinerary) {
-        const normalized = normalizeGen(data, destination, userLoc)
-        if (!normalized._fallback) {
-          cacheSet('ai', id, normalized)
-          cacheSet('detail_ai', destination?.id || id, normalized)
-        }
-        return normalized
-      }
-      content = data?.content || data?.choices?.[0]?.message?.content || ''
-    } else {
-      return fallbackItinerary(destination, userLoc)
-    }
+    // 直连 AI。Worker 代理已移除：workers.dev 在国内手机网络不可达。
+    if (!cfg.deepseekKey) return fallbackItinerary(destination, userLoc)
+    const content = await callDirectAi(prompt)
 
     const parsed = extractJson(content)
     if (!parsed) throw new Error('ai json parse fail')

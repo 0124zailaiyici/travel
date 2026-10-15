@@ -1,12 +1,12 @@
-import { getRuntimeConfig, setRuntimeConfig, getProxyBase, hasProxy } from './services/config.js'
+import { getRuntimeConfig, setRuntimeConfig } from './services/config.js'
 
-// 兼容旧调用：返回当前代理地址
+// 兼容旧调用。直连模式已无代理地址，保留空实现避免调用方报错。
 export function getApiBase() {
-  return getProxyBase() || ''
+  return ''
 }
 
 export async function ensureBaseDetected() {
-  return getApiBase()
+  return ''
 }
 
-export { getRuntimeConfig, setRuntimeConfig, getProxyBase, hasProxy }
+export { getRuntimeConfig, setRuntimeConfig }

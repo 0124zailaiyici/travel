@@ -1,34 +1,28 @@
 <template>
   <view class="st">
-    <view class="st-tip">默认已填好当前可用配置。以后代理或 AI 挂了，可在这里自己改，不需要重新打包。</view>
-
-    <view class="st-card">
-      <text class="st-label">代理地址 Proxy Base</text>
-      <input class="st-input" v-model="form.proxyBase" placeholder="https://xxx.workers.dev" />
-      <text class="st-hint">默认 Cloudflare Worker，负责藏 Key 与地图/AI 转发</text>
-    </view>
+    <view class="st-tip">直连模式：Key 保存在本机，不再经过代理。改完保存即可生效，不需要重新打包。</view>
 
     <view class="st-card">
       <text class="st-label">AI 接口地址</text>
-      <input class="st-input" v-model="form.deepseekBase" placeholder="https://sub2api.xxx" />
+      <input class="st-input" v-model="form.deepseekBase" placeholder="https://api.deepseek.com" />
       <text class="st-hint">兼容 OpenAI 格式 /v1/chat/completions</text>
     </view>
 
     <view class="st-card">
-      <text class="st-label">AI Key（可选）</text>
-      <input class="st-input" v-model="form.deepseekKey" password placeholder="sk-... 填了就直连，不填走代理" />
-      <text class="st-hint">有 Key 时优先直连上面的 AI 地址；为空则走代理</text>
+      <text class="st-label">AI Key</text>
+      <input class="st-input" v-model="form.deepseekKey" password placeholder="sk-..." />
+      <text class="st-hint">填了才会调用 AI 生成行程；为空则使用内置模板行程</text>
     </view>
 
     <view class="st-card">
       <text class="st-label">AI 模型</text>
-      <input class="st-input" v-model="form.aiModel" placeholder="grok-4.5" />
+      <input class="st-input" v-model="form.aiModel" placeholder="deepseek-chat" />
     </view>
 
     <view class="st-card">
-      <text class="st-label">地图 Key（可选）</text>
-      <input class="st-input" v-model="form.tencentMapKey" placeholder="腾讯地图 Key，可选" />
-      <text class="st-hint">填入后优先直连腾讯地图；为空时走代理轮询</text>
+      <text class="st-label">地图 Key</text>
+      <input class="st-input" v-model="form.tencentMapKey" placeholder="腾讯地图 Key" />
+      <text class="st-hint">填入后启用实时 POI 与路线；为空则只用内置离线数据</text>
     </view>
 
         <view class="st-actions">
@@ -45,10 +39,10 @@
 
     <view class="st-card">
       <text class="st-label">当前生效</text>
-      <text class="st-mono">proxy: {{ active.proxyBase || '(空)' }}</text>
       <text class="st-mono">aiBase: {{ active.deepseekBase || '(空)' }}</text>
       <text class="st-mono">model: {{ active.aiModel || '(空)' }}</text>
-      <text class="st-mono">key: {{ active.deepseekKey ? '已设置' : '未设置(走代理)' }}</text>
+      <text class="st-mono">aiKey: {{ active.deepseekKey ? '已设置' : '未设置（AI 用内置模板）' }}</text>
+      <text class="st-mono">mapKey: {{ active.tencentMapKey ? '已设置' : '未设置（仅离线数据）' }}</text>
     </view>
   </view>
 </template>
@@ -59,7 +53,6 @@ import { getRuntimeConfig, setRuntimeConfig, resetRuntimeConfig, getDefaults } f
 import { cacheClearNs } from '../../services/cache.js'
 
 const form = ref({
-  proxyBase: '',
   deepseekBase: '',
   deepseekKey: '',
   aiModel: '',
@@ -70,10 +63,9 @@ const active = ref({})
 function load() {
   const cfg = getRuntimeConfig()
   form.value = {
-    proxyBase: cfg.proxyBase || '',
     deepseekBase: cfg.deepseekBase || '',
     deepseekKey: cfg.deepseekKey || '',
-    aiModel: cfg.aiModel || 'grok-4.5',
+    aiModel: cfg.aiModel || 'deepseek-chat',
     tencentMapKey: cfg.tencentMapKey || '',
   }
   active.value = getRuntimeConfig()
@@ -85,10 +77,9 @@ function clearRuntimeCaches() {
 
 function save() {
   setRuntimeConfig({
-    proxyBase: form.value.proxyBase,
     deepseekBase: form.value.deepseekBase,
     deepseekKey: form.value.deepseekKey,
-    aiModel: form.value.aiModel || 'grok-4.5',
+    aiModel: form.value.aiModel || 'deepseek-chat',
     tencentMapKey: form.value.tencentMapKey,
   })
   clearRuntimeCaches()
@@ -101,10 +92,9 @@ function reset() {
   resetRuntimeConfig()
   clearRuntimeCaches()
   form.value = {
-    proxyBase: d.proxyBase || '',
     deepseekBase: d.deepseekBase || '',
     deepseekKey: d.deepseekKey || '',
-    aiModel: d.aiModel || 'grok-4.5',
+    aiModel: d.aiModel || 'deepseek-chat',
     tencentMapKey: d.tencentMapKey || '',
   }
   active.value = getRuntimeConfig()

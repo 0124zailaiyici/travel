@@ -1,5 +1,5 @@
 import { httpPost } from './http.js'
-import { getProxyBase, hasProxy, getRuntimeConfig, getAiModel } from './config.js'
+import { getRuntimeConfig, getAiModel } from './config.js'
 import { cacheGet, cacheSet, cacheDel } from './cache.js'
 import { getAllDestinations, getDestinationByName, attachDistance, sortByDistanceOrRating } from './localDb.js'
 
@@ -94,7 +94,7 @@ async function callDirectAi(prompt) {
   const cfg = getRuntimeConfig()
   const key = cfg.deepseekKey
   if (!key) return null
-  const base = (cfg.deepseekBase || 'https://sub2api.zailaiyici.xyz').replace(/\/$/, '')
+  const base = (cfg.deepseekBase || 'https://api.deepseek.com').replace(/\/$/, '')
   const data = await httpPost(chatEndpoint(base), {
     model: getAiModel(),
     messages: [
@@ -111,23 +111,10 @@ async function callDirectAi(prompt) {
 }
 
 async function callRecommend(payload) {
+  // 直连 AI。Worker 代理已移除：workers.dev 在国内手机网络不可达。
   const cfg = getRuntimeConfig()
-  // 用户自定义 Key 优先直连
-  if (cfg.deepseekKey) {
-    return callDirectAi(payload.prompt)
-  }
-  if (!hasProxy()) throw new Error('no_proxy')
-  let lastErr = null
-  for (let i = 0; i < 2; i++) {
-    try {
-      return await httpPost(getProxyBase() + '/ai/recommend', payload, { 'Content-Type': 'application/json' }, 45000)
-    } catch (e) {
-      lastErr = e
-      // 短等后重试一次
-      await new Promise((r) => setTimeout(r, 600 + i * 800))
-    }
-  }
-  throw lastErr || new Error('ai_recommend_fail')
+  if (!cfg.deepseekKey) throw new Error('no_ai_key')
+  return callDirectAi(payload.prompt)
 }
 
 /**

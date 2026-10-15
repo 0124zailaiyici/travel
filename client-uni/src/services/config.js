@@ -4,12 +4,11 @@
 import localCfg from './config.local.js'
 
 const DEFAULTS = {
-  proxyBase: 'https://huaxi-proxy.zailaiyici88.workers.dev',
+  // 直连模式：Key 存在客户端。个人自用可接受；若将来要公开分发，需改回服务端代理。
   tencentMapKey: '',
-  // 用户可在设置页覆盖；默认走 Worker 代理，Key 不落客户端
   deepseekKey: '',
-  deepseekBase: 'https://sub2api.zailaiyici.xyz',
-  aiModel: 'grok-4.5',
+  deepseekBase: 'https://api.deepseek.com',
+  aiModel: 'deepseek-chat',
   openMeteoBase: 'https://api.open-meteo.com',
   tencentMapBase: 'https://apis.map.qq.com',
   aiCacheDays: 7,
@@ -45,16 +44,8 @@ export function resetRuntimeConfig() {
   return getRuntimeConfig()
 }
 
-export function getProxyBase() {
-  return (_cfg.proxyBase || '').replace(/\/$/, '')
-}
-
-export function hasProxy() {
-  return !!getProxyBase()
-}
-
 export function getAiModel() {
-  return _cfg.aiModel || 'grok-4.5'
+  return _cfg.aiModel || 'deepseek-chat'
 }
 
 export function getDefaults() {

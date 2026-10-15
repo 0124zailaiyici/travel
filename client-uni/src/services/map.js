@@ -1,5 +1,5 @@
 import { httpGet } from './http.js'
-import { getProxyBase, hasProxy, getRuntimeConfig } from './config.js'
+import { getRuntimeConfig } from './config.js'
 import { cacheGet, cacheSet } from './cache.js'
 
 function normalizeTencentPoi(p, withDistance = false) {
@@ -17,11 +17,6 @@ function normalizeTencentPoi(p, withDistance = false) {
     image_url: 'https://picsum.photos/seed/' + (p.id || p.title) + '/400/300',
     provider: 'tencent-direct',
   }
-}
-
-async function proxyMapGet(path, params = {}) {
-  if (!hasProxy()) return null
-  return httpGet(getProxyBase() + '/map/' + path, params, {}, 6000)
 }
 
 function mapKey() {
@@ -87,11 +82,14 @@ async function directTencent(path, params = {}) {
 }
 
 async function mapGet(path, params = {}) {
-  // 用户在设置页填了地图 Key 时优先直连，避免代理 Key 额度耗尽
-  if (mapKey()) {
-    try { return await directTencent(path, params) } catch (e) { console.error('direct tencent map fail', e) }
+  // 直连腾讯地图。Worker 代理已移除：workers.dev 在国内手机网络不可达。
+  if (!mapKey()) return null
+  try {
+    return await directTencent(path, params)
+  } catch (e) {
+    console.error('tencent map fail', e)
+    return null
   }
-  try { return await proxyMapGet(path, params) } catch (e) { return null }
 }
 
 export async function searchPOI(keyword, city = '', offset = 20) {
