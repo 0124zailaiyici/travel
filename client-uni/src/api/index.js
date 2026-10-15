@@ -164,6 +164,12 @@ async function enrichDetail(detail, loc, { force = false } = {}) {
   const lat = loc?.lat
   const lng = loc?.lng
 
+  // 距离同样依赖位置。调用方可能先不带位置秒开（定位还没回来），
+  // 等定位到了再调这里增强——所以距离必须在这里补，否则页面会一直显示 ?km。
+  if (lat != null && lng != null && detail.lat != null && detail.lng != null) {
+    detail.distance = calculateDistance(lat, lng, detail.lat, detail.lng)
+  }
+
   const tasks = []
 
   // AI 行程：无行程 / 模板 / 强制刷新时生成；带上用户位置
@@ -324,8 +330,9 @@ export const api = {
     } else {
       detail.generating = false
     }
-    // 同时刷新实时路线
+    // 同时刷新实时路线与距离（位置可能已经变了）
     if (loc?.lat != null && loc?.lng != null && detail.lat && detail.lng) {
+      detail.distance = calculateDistance(loc.lat, loc.lng, detail.lat, detail.lng)
       const [driving, transit] = await Promise.all([
         withTimeout(getDrivingRoute(loc.lat, loc.lng, detail.lat, detail.lng), 4500, null),
         withTimeout(getTransitRoute(loc.lat, loc.lng, detail.lat, detail.lng), 4500, null),
