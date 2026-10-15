@@ -10,12 +10,29 @@ function clone(v) {
 const THEME_IDS = ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9', 't10']
 
 /**
- * 按主题取本地配图。
+ * bundle 里 t3「海岛」被当成"水景"兜底标签，瀑布/江/湖/梯田都被打了它，
+ * 只按 theme_ids[0] 取图会让黄果树瀑布显示成沙滩。这里按目的地名精确覆盖。
+ * 仅覆盖确实被误标的条目，其余仍走主题图。
+ */
+const SCENE_OVERRIDE = {
+  '黄果树瀑布': 'waterfall',
+  '德天跨国瀑布': 'waterfall',
+  '桂林漓江': 'river',
+  '桂林两江四湖': 'river',
+  '荔波小七孔': 'river',
+  '昆明滇池': 'lake',
+  '龙脊梯田': 'terrace',
+}
+
+/**
+ * 取本地配图。
  * 原实现用 picsum.photos 随机图兜底，会给出与目的地完全无关的照片
  * （九寨沟显示饺子、西湖显示风力发电机），比没有图更糟。
- * 现在按 theme_ids[0] 取 static/themes 下风格统一的主题图。
+ * 现在按场景覆盖 -> theme_ids[0] 的顺序取 static/ 下风格统一的配图。
  */
 function themeImage(d) {
+  const scene = SCENE_OVERRIDE[d.name]
+  if (scene) return '/static/scenes/' + scene + '.jpg'
   const tid = (d.theme_ids || [])[0]
   return THEME_IDS.includes(tid) ? ('/static/themes/' + tid + '.jpg') : '/static/themes/t1.jpg'
 }

@@ -249,6 +249,23 @@ $projectKey = Join-Path $root ...   # 这行从未执行，$projectKey 为 null
 > 要替换或新增主题配图，直接覆盖 `static/themes/tN.jpg` 即可。新增主题需同时
 > 更新 `localDb.js` 里的 `THEME_IDS` 数组和 `bundle.json` 的 `themes`。
 
+### 场景覆盖（scenes）
+
+`bundle.json` 里 **`t3 海岛` 被当成了"水景"兜底标签**，瀑布、江、湖、梯田都被打了它。
+只按 `theme_ids[0]` 取图会让黄果树瀑布显示成沙滩，因此 `localDb.js` 里有一张
+按目的地名的精确覆盖表 `SCENE_OVERRIDE`：
+
+| 目的地 | 覆盖为 | 文件 |
+|---|---|---|
+| 黄果树瀑布、德天跨国瀑布 | 瀑布 | `static/scenes/waterfall.jpg` |
+| 桂林漓江、桂林两江四湖、荔波小七孔 | 江河山水 | `static/scenes/river.jpg` |
+| 昆明滇池 | 湖泊 | `static/scenes/lake.jpg` |
+| 龙脊梯田 | 梯田 | `static/scenes/terrace.jpg` |
+
+> 若日后清理了 `bundle.json` 的主题标注，这张覆盖表可以一并删掉。
+> 新增覆盖条目时，记得把对应图片放进 `static/scenes/`。
+
+
 
 ---
 
