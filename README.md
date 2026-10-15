@@ -293,6 +293,8 @@ $projectKey = Join-Path $root ...   # 这行从未执行，$projectKey 为 null
 
 | 问题 | 位置 | 状态 |
 |---|---|---|
+| **空数组/空对象覆盖内容**：`detail.tips = gen.tips \|\| detail.tips` 这种写法下，AI 归一化产出的 `[]` 是**真值**，会把目的地自带的 tips 清空 → 「避坑指南」整块消失；`transport: {}` 同理会占位掉真实交通指南 | `api/index.js` 三处 | ✅ 已修：改判「有没有内容」 |
+| 「暂无详细交通指南」兜底分支永远不可达：它嵌在 `v-if="route \|\| transportDetail \|\| transport_guide"` 之内，而外层为假的条件恰好就是「三者都没有」——最该显示这句话的时候 | `pages/detail/detail.vue` | ✅ 已修：区块改为恒定渲染 |
 | 目的地配图缺失时曾用 `picsum.photos` 随机图兜底，出现「九寨沟显示饺子、西湖显示风力发电机」 | `data/bundle.json` | ✅ 已修：改为 10 张主题配图 |
 | 定位超时仅 1800ms，冷启动来不及 → 「附近推荐」静默退化成前 8 个目的地，且无任何失败提示 | `pages/index/index.vue` | ✅ 已修：超时提到 8000ms，失败时改为「热门推荐」并给出重试入口 |
 | 无定位兜底是 `getAllDestinations().slice(0,8)`（bundle 原始顺序），既不「附近」也不「热门」 | `api/index.js` | ✅ 已修：改为按评分取前 8 |
