@@ -5,7 +5,8 @@ dist/
 *.log
 server/data/
 .DS_Store
-client-uni/src/services/config.local.js
+# config.local.js 是提交进仓库的空模板（保证 clone 下来能构建）
+# 真实 Key 放这里，不要提交：
 client-uni/src/services/config.local.private.js
 client-uni/keystore/
 proxy-worker/.secrets/

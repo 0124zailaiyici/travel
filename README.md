@@ -79,7 +79,7 @@ Travel_planning/
 │   │       ├── weather.js      # open-meteo 天气
 │   │       ├── userStore.js    # 收藏 / 历史 / 评论（仅本地 storage）
 │   │       ├── config.js       # 运行时配置
-│   │       └── config.local.js # 私有配置（已 gitignore）
+│   │       └── config.local.js # 空模板（已提交，保证 clone 能构建）
 │   ├── keystore/               # 签名证书（已 gitignore）
 │   ├── local-repack-apk.ps1    # 重打包 + 重签名
 │   └── build-apk.bat           # 一键：编译 + 重打包
@@ -109,18 +109,53 @@ Travel_planning/
 > **注意**：这三项要一起改。只填 Key 不改地址/模型，会拿 DeepSeek 的 Key 去请求
 > 别的服务，必然鉴权失败。
 
-### 方式 B：`config.local.js`
+### 方式 B：`config.local.private.js`
 
-复制 `src/services/config.local.example.js` 为 `config.local.js` 后填写。该文件已
-gitignore，会被编译进包。
+真实 Key 写这里。该文件已 gitignore，会被编译进包。
 
 ```js
+// client-uni/src/services/config.local.private.js
 export default {
   tencentMapKey: '',                      // 腾讯地图 Key
   deepseekKey: '',                        // AI Key
   deepseekBase: 'https://api.deepseek.com',
   aiModel: 'deepseek-chat',
 }
+```
+
+> **`config.local.js` 不要放真实 Key。** 那个文件是**提交进仓库的空模板**，
+> 它的存在只为保证 clone 下来能直接构建——原因见下。
+
+#### 为什么会有两个 config.local
+
+原本只有 `config.local.js`，且被 gitignore，代码里是直接 `import`：
+
+```js
+import localCfg from './config.local.js'   // ← 文件不存在时，构建直接失败
+```
+
+**全新 clone 会因为 `Could not resolve "./config.local.js"` 构建失败。**
+这不是「配置为空」，是编译不过——README 里写一句「请先复制模板」并不能阻止这件事。
+
+现在的分层：
+
+| 文件 | 是否提交 | 作用 |
+|---|---|---|
+| `config.local.js` | ✅ 提交 | 空模板，保证 clone 能构建 |
+| `config.local.private.js` | ❌ gitignore | 本机真实 Key |
+
+`config.js` 用 `import.meta.glob` 加载 private 文件——glob 在文件不存在时
+只是匹配为空，不会让构建失败：
+
+```js
+const privateModules = import.meta.glob('./config.local.private.js', { eager: true })
+const privateCfg = privateModules['./config.local.private.js']?.default || {}
+```
+
+配置优先级（后者覆盖前者）：
+
+```
+DEFAULTS  <  config.local.js  <  config.local.private.js  <  运行时 storage（设置页）
 ```
 
 ### 腾讯地图 Key 配额说明
