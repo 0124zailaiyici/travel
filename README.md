@@ -69,6 +69,7 @@ Travel_planning/
 │   ├── src/
 │   │   ├── api/index.js        # 数据编排：本地秒开 + 异步增强
 │   │   ├── data/bundle.json    # 167 个目的地离线数据
+│   │   ├── static/themes/      # 10 张主题配图（t1..t10.jpg）
 │   │   ├── pages/              # index / detail / search / favorites / settings
 │   │   └── services/
 │   │       ├── localDb.js      # 本地数据查询、距离排序
@@ -225,9 +226,29 @@ $projectKey = Join-Path $root ...   # 这行从未执行，$projectKey 为 null
 
 | 问题 | 位置 | 状态 |
 |---|---|---|
-| 56/167 个目的地是 `picsum.photos` 随机占位图（九寨沟显示饺子、西湖显示风力发电机） | `data/bundle.json` | 未修，数据问题 |
-| 定位超时仅 1800ms，冷启动来不及 → 「附近推荐」退化成前 8 个目的地，且界面无失败提示 | `pages/index/index.vue` | 未修 |
-| `zailaiyici.xyz` 域名已失效（解析到 `127.0.0.1`） | 历史遗留 | 已从配置中移除 |
+| 目的地配图缺失时曾用 `picsum.photos` 随机图兜底，出现「九寨沟显示饺子、西湖显示风力发电机」 | `data/bundle.json` | ✅ 已修：改为 10 张主题配图 |
+| 定位超时仅 1800ms，冷启动来不及 → 「附近推荐」静默退化成前 8 个目的地，且无任何失败提示 | `pages/index/index.vue` | ✅ 已修：超时提到 8000ms，失败时改为「热门推荐」并给出重试入口 |
+| 无定位兜底是 `getAllDestinations().slice(0,8)`（bundle 原始顺序），既不「附近」也不「热门」 | `api/index.js` | ✅ 已修：改为按评分取前 8 |
+| `zailaiyici.xyz` 域名已失效（解析到 `127.0.0.1`） | 历史遗留 | ✅ 已从配置中移除 |
+
+### 主题配图机制
+
+`client-uni/src/static/themes/` 下有 10 张按主题分类的配图（400×400 JPEG，合计约 271 KB）：
+
+| 文件 | 主题 | 文件 | 主题 |
+|---|---|---|---|
+| `t1.jpg` | 赏樱 | `t6.jpg` | 烟花 |
+| `t2.jpg` | 雪山 | `t7.jpg` | 古镇 |
+| `t3.jpg` | 海岛 | `t8.jpg` | 露营 |
+| `t4.jpg` | 红叶 | `t9.jpg` | 温泉 |
+| `t5.jpg` | 赶海 | `t10.jpg` | 花海 |
+
+`localDb.ensureImage()` 按目的地的 `theme_ids[0]` 取对应图片；`image_url` 为空的
+56 个目的地由此获得配图，其余 111 个仍用高德真实图片。
+
+> 要替换或新增主题配图，直接覆盖 `static/themes/tN.jpg` 即可。新增主题需同时
+> 更新 `localDb.js` 里的 `THEME_IDS` 数组和 `bundle.json` 的 `themes`。
+
 
 ---
 
