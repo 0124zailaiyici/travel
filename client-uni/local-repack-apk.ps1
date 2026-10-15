@@ -70,7 +70,10 @@ if (-not $buildTools) {
 $aapt = Join-Path $buildTools.FullName "aapt.exe"
 $zipalign = Join-Path $buildTools.FullName "zipalign.exe"
 $apksigner = Join-Path $buildTools.FullName "apksigner.bat"
-# 签名证书：优先用项目内备份（keystore/ 已 gitignore），机器级 debug.keystore 丢失时仍可覆盖安装
+# Signing key: prefer the project-local copy (keystore/ is gitignored) so the
+# build still overwrite-installs when the machine-level debug.keystore is lost.
+# NOTE: keep this file pure ASCII -- Windows PowerShell 5.1 reads a BOM-less
+# script as GBK and a mangled comment can swallow the following line.
 $projectKey = Join-Path $root "keystore\debug.keystore"
 $sdkKey = Join-Path $env:USERPROFILE ".android\debug.keystore"
 $debugKey = if (Test-Path $projectKey) { $projectKey } else { $sdkKey }
