@@ -21,8 +21,11 @@ if (-not (Test-Path $wwwSource)) {
   throw "missing $wwwSource; run pnpm run build:app-android first"
 }
 
+# Pick the newest HBuilderX cloud-pack output, e.g. __UNI__5B95181__20260715213156.apk.
+# The 14-digit timestamp pattern deliberately excludes the *_installfix.apk files
+# this script produces -- otherwise a second run would repack an already-repacked APK.
 $baseApk = Get-ChildItem -LiteralPath $apkDirectory -Filter "*.apk" |
-  Where-Object { $_.Name -match '^__UNI__5B95181__20260715\d{6}\.apk$' } |
+  Where-Object { $_.Name -match '^__UNI__5B95181__\d{14}\.apk$' } |
   Sort-Object LastWriteTime -Descending |
   Select-Object -First 1
 if (-not $baseApk) {
