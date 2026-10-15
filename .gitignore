@@ -11,3 +11,6 @@ client-uni/keystore/
 proxy-worker/.secrets/
 proxy-worker/.wrangler/
 proxy-worker/dist/
+
+# 图片生成工具的原始输出（体积大，压缩后的成品在 client-uni/src/static/themes/）
+generate/

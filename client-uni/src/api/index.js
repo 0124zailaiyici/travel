@@ -66,7 +66,10 @@ function withTimeout(promise, ms, fallback = null) {
 function localNearby(loc) {
   const lat = loc?.lat
   const lng = loc?.lng
-  if (lat == null || lng == null) return getAllDestinations().slice(0, 8)
+  // 无定位时退化为「热门推荐」：按评分取前 8。
+  // 原实现是 getAllDestinations().slice(0, 8)，即 bundle 原始顺序，
+  // 结果既不「附近」也不「热门」（武汉大学/玉渊潭/鼋头渚/玉龙雪山/长白山…）。
+  if (lat == null || lng == null) return sortByDistanceOrRating(getAllDestinations(), 'rating').slice(0, 8)
   return sortByDistanceOrRating(attachDistance(getAllDestinations(), lat, lng), 'distance').slice(0, 12)
 }
 

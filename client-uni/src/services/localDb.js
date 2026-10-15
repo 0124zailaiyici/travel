@@ -7,8 +7,21 @@ function clone(v) {
   return JSON.parse(JSON.stringify(v))
 }
 
+const THEME_IDS = ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9', 't10']
+
+/**
+ * 按主题取本地配图。
+ * 原实现用 picsum.photos 随机图兜底，会给出与目的地完全无关的照片
+ * （九寨沟显示饺子、西湖显示风力发电机），比没有图更糟。
+ * 现在按 theme_ids[0] 取 static/themes 下风格统一的主题图。
+ */
+function themeImage(d) {
+  const tid = (d.theme_ids || [])[0]
+  return THEME_IDS.includes(tid) ? ('/static/themes/' + tid + '.jpg') : '/static/themes/t1.jpg'
+}
+
 function ensureImage(d) {
-  if (!d.image_url) d.image_url = `https://picsum.photos/seed/${d.id || d.name}/400/300`
+  if (!d.image_url || /picsum\.photos/.test(d.image_url)) d.image_url = themeImage(d)
   return d
 }
 

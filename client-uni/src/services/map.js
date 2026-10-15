@@ -14,7 +14,9 @@ function normalizeTencentPoi(p, withDistance = false) {
     distance: withDistance && p._distance ? Math.round(p._distance / 1000) : undefined,
     tags: String(p.category || '').split(';').filter(Boolean).slice(0, 3),
     description: p.address || '',
-    image_url: 'https://picsum.photos/seed/' + (p.id || p.title) + '/400/300',
+    // 腾讯 POI 不返回图片；留空让卡片显示主题色占位，
+    // 不再用 picsum 随机图（会张冠李戴）。
+    image_url: '',
     provider: 'tencent-direct',
   }
 }

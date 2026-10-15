@@ -20,7 +20,7 @@
     </view>
     <view class="settings-entry" @tap="goSettings">
       <text class="settings-entry-tt">服务设置</text>
-      <text class="settings-entry-sub">可改 AI 地址 / Key / 代理</text>
+      <text class="settings-entry-sub">可改 AI 地址 / Key / 地图 Key</text>
       <text class="settings-entry-go">›</text>
     </view>
 
@@ -50,12 +50,18 @@
 
     <view class="section">
       <view class="section-hd">
-        <text class="section-tt">📍 附近推荐</text>
+        <text class="section-tt">{{ locState === 'ok' ? '📍 附近推荐' : '🔥 热门推荐' }}</text>
+        <text class="section-more" v-if="locState !== 'ok'" @tap="retryLocation">
+          {{ locState === 'loading' ? '定位中…' : '重试定位 ›' }}
+        </text>
+      </view>
+      <view class="loc-note" v-if="locState === 'fail'">
+        <text class="ln-text">未能获取位置，以下按热度排序</text>
       </view>
       <view class="nearby-list" v-if="nearby.length">
-        <DestCard v-for="d in nearby" :key="d.id" :name="d.name" :description="d.description || d.address || ''" :rating="d.rating" :distance="d.distance" :imageUrl="d.image_url" :fallbackIcon="d.icon || '🌸'" :showDistance="true" @tap="goDetail(d.id)" />
+        <DestCard v-for="d in nearby" :key="d.id" :name="d.name" :description="d.description || d.address || ''" :rating="d.rating" :distance="d.distance" :imageUrl="d.image_url" :fallbackIcon="d.icon || '🌸'" :showDistance="locState === 'ok'" @tap="goDetail(d.id)" />
       </view>
-      <view class="empty-nearby" v-else @tap="retryLocation">
+      <view class="empty-nearby" v-else-if="locState === 'fail'" @tap="retryLocation">
         <text class="en-icon">📍</text>
         <text class="en-text">获取位置失败，点此重试</text>
       </view>
@@ -75,6 +81,7 @@ import DestCard from '../../components/DestCard.vue'
 import ShimmerCard from '../../components/ShimmerCard.vue'
 
 const themes = ref([]); const nearby = ref([]); const inSeason = ref([])
+const locState = ref('loading')   // loading | ok | fail
 const monthText = ref('推荐')
 const mn = ['','一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月']
 
@@ -110,7 +117,11 @@ async function load(force = false) {
     cacheSet('inSeason', s)
 
     // 2) 定位与附近
-    const loc = await getLocation({ timeout: 1800, allowCache: !force })
+    // 冷启动时系统定位服务需要初始化，原 1800ms 常常来不及，会静默退化成
+    // 「前 8 个目的地」却仍标着「附近推荐」，用户无法察觉定位其实失败了。
+    locState.value = 'loading'
+    const loc = await getLocation({ timeout: 8000, allowCache: !force })
+    locState.value = (loc && loc.lat != null && loc.lng != null) ? 'ok' : 'fail'
     const localNearby = await api.getNearbyFast(loc)
     if (localNearby && localNearby.length) nearby.value = localNearby
 
@@ -190,6 +201,9 @@ function goDetail(id) {
 .empty-nearby { text-align: center; padding: 60rpx; }
 .en-icon { font-size: 48rpx; display: block; margin-bottom: 8rpx; }
 .en-text { font-size: 24rpx; color: #8A7A76; }
+
+.loc-note { margin: 0 24rpx 12rpx; padding: 12rpx 20rpx; background: #FBF3EE; border-radius: 12rpx; }
+.ln-text { font-size: 22rpx; color: #A0908C; }
 
 .spacer { height: 40rpx; }
 </style>
