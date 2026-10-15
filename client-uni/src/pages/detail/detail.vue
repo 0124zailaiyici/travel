@@ -11,13 +11,13 @@
       </view>
 
       <!-- === AI GENERATING BANNER === -->
-      <view class="gen-banner" v-if="detail.generating">
+      <view class="gen-banner" v-if="detail.generating || aiRefreshing">
         <text class="gen-icon">🤖</text>
         <view class="gen-body">
-          <text class="gen-tt">AI 正在生成个性化行程</text>
-          <text class="gen-sub">约30秒后刷新查看 · 当前为通用模板</text>
+          <text class="gen-tt">{{ aiRefreshing ? '正在按你的位置重新生成…' : 'AI 正在生成个性化行程' }}</text>
+          <text class="gen-sub">{{ aiRefreshing ? '结合当前位置写行程与交通' : '可点“按我的位置刷新”查看最新' }}</text>
         </view>
-        <view class="gen-spinner"></view>
+        <view class="gen-spinner" v-if="detail.generating || aiRefreshing"></view>
       </view>
 
       <template v-if="detail.name">
@@ -50,9 +50,12 @@
 
         <!-- === ITINERARY === -->
         <view class="sec" v-if="detail.itinerary && detail.itinerary.length">
-          <view class="sec-hd" @tap="toggleAllDays">
+          <view class="sec-hd">
             <text class="sec-tt">📋 行程安排</text>
-            <text class="sec-toggle">{{ allDaysExpanded ? '收起全部' : '展开全部' }}</text>
+            <view class="sec-acts">
+              <text class="sec-toggle" @tap.stop="refreshByLocation">{{ aiRefreshing ? '生成中…' : '按我的位置刷新' }}</text>
+              <text class="sec-toggle" @tap.stop="toggleAllDays">{{ allDaysExpanded ? '收起全部' : '展开全部' }}</text>
+            </view>
           </view>
           <view class="timeline">
             <view class="day" v-for="(day, i) in detail.itinerary" :key="i">
@@ -102,7 +105,10 @@
 
         <!-- === TRANSPORT === -->
         <view class="sec" v-if="detail.route || detail.transportDetail || detail.transport_guide">
-          <view class="sec-hd"><text class="sec-tt">🚗 交通方案</text></view>
+          <view class="sec-hd">
+            <text class="sec-tt">🚗 交通方案</text>
+            <text class="sec-toggle" @tap="refreshByLocation">{{ aiRefreshing ? '刷新中…' : '按位置重算' }}</text>
+          </view>
 
           <!-- Real-time route from user location -->
           <view class="tp-route" v-if="detail.route">
@@ -253,9 +259,10 @@ import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { api } from '../../api/index.js'
 import { getLocation } from '../../api/location.js'
 import { getUserId, ensureUserId } from '../../api/user.js'
-import { getApiBase } from '../../config.js'
 import ShimmerCard from '../../components/ShimmerCard.vue'
 const detail = ref({}); const isFav = ref(false)
+const aiRefreshing = ref(false)
+const userLoc = ref(null)
 const expandedDays = ref([])
 const allDaysExpanded = computed(() => expandedDays.value.every(v => v))
 const uid = ref(getUserId())
@@ -315,7 +322,7 @@ function loadCommentImages(list) {
     if (!c.image_url) return
     const fullUrl = fullImgUrl(c.image_url)
     if (loadedImgUrls.value[c.id]) return
-    wx.getImageInfo({
+    uni.getImageInfo({
       src: fullUrl,
       success: res => { loadedImgUrls.value[c.id] = res.path },
       fail: () => { loadedImgUrls.value[c.id] = fullUrl }
@@ -325,8 +332,8 @@ function loadCommentImages(list) {
 
 function fullImgUrl(url) {
   if (!url) return ''
-  if (url.startsWith('http') || url.startsWith('data:')) return url
-  return getApiBase() + url
+  if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('wxfile:') || url.startsWith('file:') || url.startsWith('/')) return url
+  return url
 }
 
 function findParentName(parentId) { return commentNames.value[parentId] || '已删除' }
@@ -343,9 +350,9 @@ function timeAgo(t) {
 }
 
 function pickImage() {
-  wx.chooseImage({ count: 1, sizeType: ['original'], sourceType: ['album', 'camera'],
+  uni.chooseImage({ count: 1, sizeType: ['original'], sourceType: ['album', 'camera'],
     success: (res) => {
-      wx.compressImage({ src: res.tempFilePaths[0], quality: 80,
+      uni.compressImage({ src: res.tempFilePaths[0], quality: 80,
         success: (cr) => { cmtImage.value = cr.tempFilePath },
         fail: () => { cmtImage.value = res.tempFilePaths[0] }
       })
@@ -354,7 +361,7 @@ function pickImage() {
 }
 
 function previewImg(url) {
-  wx.previewImage({ urls: [url], current: url })
+  uni.previewImage({ urls: [url], current: url })
 }
 
 async function submitComment() {
@@ -398,7 +405,7 @@ async function deleteComment(id) {
   const ok = await new Promise(r => uni.showModal({ title:'确认删除', content:'删除后不可恢复', success:(e) => r(e.confirm) }))
   if (!ok) return
   try {
-    await api.deleteComment(id, uid.value)
+    await api.deleteComment(id, uid.value, detail.value.id)
     uni.showToast({ title:'已删除', icon:'none' })
     loadComments()
   } catch(e) {
@@ -413,9 +420,9 @@ function toggleAllDays() {
   const target = !allDaysExpanded.value
   expandedDays.value = expandedDays.value.map(() => target)
 }
-const labels = { transport:'往返交通', accommodation:'住宿', food:'餐饮', tickets:'门票', other:'其他' }
-const icons = { transport:'🚗', accommodation:'🏨', food:'🍜', tickets:'🎫', other:'📦' }
-const barColors = { transport:'linear-gradient(90deg,#5B7B5A,#8BA88A)', accommodation:'linear-gradient(90deg,#9A5E58,#C4817A)', food:'linear-gradient(90deg,#C4917A,#E8B4AE)', tickets:'linear-gradient(90deg,#5B7B8A,#8BA8BA)', other:'linear-gradient(90deg,#9A9A9A,#C0C0C0)' }
+const labels = { transport:'往返交通', accommodation:'住宿', hotel:'住宿', food:'餐饮', tickets:'门票', ticket:'门票', other:'其他' }
+const icons = { transport:'🚗', accommodation:'🏨', hotel:'🏨', food:'🍜', tickets:'🎫', ticket:'🎫', other:'📦' }
+const barColors = { transport:'linear-gradient(90deg,#5B7B5A,#8BA88A)', accommodation:'linear-gradient(90deg,#9A5E58,#C4817A)', hotel:'linear-gradient(90deg,#9A5E58,#C4817A)', food:'linear-gradient(90deg,#C4917A,#E8B4AE)', tickets:'linear-gradient(90deg,#5B7B8A,#8BA8BA)', ticket:'linear-gradient(90deg,#5B7B8A,#8BA8BA)', other:'linear-gradient(90deg,#9A9A9A,#C0C0C0)' }
 
 const budgetEntries = computed(() => {
   const b = detail.value.budget
@@ -456,21 +463,75 @@ async function toggleFav() {
   }
 }
 
+async function refreshByLocation() {
+  if (!detail.value?.id || aiRefreshing.value) return
+  aiRefreshing.value = true
+  detail.value = { ...detail.value, generating: true }
+  uni.showLoading({ title: '按位置生成中…', mask: true })
+  let toastTitle = ''
+  try {
+    const loc = await getLocation({ timeout: 2500, allowCache: false }).catch(() => userLoc.value)
+    userLoc.value = loc
+    const full = await api.refreshItinerary({ ...detail.value }, loc)
+    if (full) {
+      detail.value = { ...detail.value, ...full, generating: !!full.generating }
+      if (full.itinerary?.length) expandedDays.value = full.itinerary.map(() => true)
+      toastTitle = full.generating ? '已用模板兜底' : '已按位置更新'
+    } else {
+      toastTitle = '生成失败，请稍后重试'
+    }
+  } catch (e) {
+    console.error(e)
+    const msg = e?.message || e?.errMsg || '网络/超时'
+    toastTitle = '刷新失败: ' + String(msg).slice(0, 18)
+  } finally {
+    aiRefreshing.value = false
+    try { uni.hideLoading() } catch {}
+  }
+  if (toastTitle) uni.showToast({ title: toastTitle, icon: 'none' })
+}
+
 onLoad(async (o) => {
   if (!o.id) return
-  const [realUid, loc] = await Promise.all([ensureUserId().catch(() => null), getLocation().catch(() => ({}))])
-  if (realUid) uid.value = realUid
-  const [data, favs] = await Promise.all([
-    api.getDetail(o.id, loc).catch(() => null),
-    realUid ? api.syncGetFavs(realUid).catch(() => []) : Promise.resolve([])
-  ])
-  if (data) {
-    detail.value = data
-    expandedDays.value = data.itinerary?.map(() => true) || []
+  uid.value = getUserId()
+
+  // 1) 本地秒开
+  const locPromise = getLocation({ timeout: 1800, allowCache: true }).catch(() => null)
+  const loc = await locPromise
+  userLoc.value = loc
+  try {
+    const data = await api.getDetailFast(o.id, loc)
+    if (data) {
+      detail.value = data
+      expandedDays.value = data.itinerary?.map(() => true) || []
+    }
+  } catch (e) {
+    console.error(e)
   }
-  if (favs.length && data) isFav.value = favs.some(d => d.id === data.id)
-  if (data) loadComments()
-  if (realUid) api.postHistory(realUid, o.id).catch(() => {})
+
+  // 2) 收藏/历史
+  ensureUserId().then((realUid) => {
+    if (!realUid) return
+    uid.value = realUid
+    api.syncGetFavs(realUid).then((favs) => {
+      if (detail.value?.id) isFav.value = (favs || []).some((d) => d.id === detail.value.id)
+    }).catch(() => {})
+    api.postHistory(realUid, o.id).catch(() => {})
+  }).catch(() => {})
+
+  // 3) 天气/路线/AI 后台增强（带用户位置）
+  if (detail.value?.id) {
+    api.enrichDetail({ ...detail.value }, loc, { force: false }).then((full) => {
+      if (!full) return
+      detail.value = { ...detail.value, ...full }
+      if (full.itinerary?.length && (!expandedDays.value || !expandedDays.value.length)) {
+        expandedDays.value = full.itinerary.map(() => true)
+      }
+    }).catch(() => {})
+  }
+
+  // 4) 评论
+  loadComments().catch(() => {})
 })
 onShareAppMessage(() => ({
   title: detail.value.name + ' - 花期',
@@ -629,14 +690,14 @@ function wrapText(ctx, text, maxWidth, fontSize) {
 async function saveImage(canvasNode, mode) {
   try {
     const tempPath = await new Promise((res, rej) => {
-      wx.canvasToTempFilePath({ canvas: canvasNode, success: (r) => res(r.tempFilePath), fail: rej })
+      uni.canvasToTempFilePath({ canvas: canvasNode, success: (r) => res(r.tempFilePath), fail: rej })
     })
     if (mode === 'share') {
-      wx.previewImage({ urls: [tempPath], current: tempPath })
+      uni.previewImage({ urls: [tempPath], current: tempPath })
       showShareSheet.value = false
       uni.showToast({ title: '长按图片发送给朋友', icon: 'none', duration: 2000 })
     } else {
-      await wx.saveImageToPhotosAlbum({ filePath: tempPath })
+      await uni.saveImageToPhotosAlbum({ filePath: tempPath })
       uni.showToast({ title: '已保存到相册', icon: 'none' })
       showShareSheet.value = false
     }
@@ -671,6 +732,7 @@ async function saveImage(canvasNode, mode) {
 .sec { margin: 20rpx 24rpx; padding: 20rpx 20rpx 24rpx; background: rgba(255,255,255,0.88); border-radius: 20rpx; box-shadow: 0 2rpx 14rpx rgba(196,129,122,0.04); }
 .sec-tt { font-size: 28rpx; font-weight: 600; color: #2C2422; display: block; }
 .sec-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14rpx; }
+.sec-acts { display: flex; gap: 16rpx; align-items: center; }
 .sec-toggle { font-size: 22rpx; color: #C4817A; }
 
 /* ===== ITINERARY — TIMELINE ===== */

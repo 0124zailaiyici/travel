@@ -1,23 +1,12 @@
-let _apiBase = null
-let _detectPromise = null
+import { getRuntimeConfig, setRuntimeConfig, getProxyBase, hasProxy } from './services/config.js'
 
+// 兼容旧调用：返回当前代理地址
 export function getApiBase() {
-  return _apiBase
+  return getProxyBase() || ''
 }
 
-async function _detect() {
-  const candidates = ['https://zailaiyici.xyz', 'http://47.106.126.50:3002', 'http://localhost:3002', 'http://10.38.148.114:3002']
-  for (const url of candidates) {
-    try {
-      await uni.request({ url: url + '/api/health', timeout: 3000 })
-      _apiBase = url
-      return
-    } catch(e) {}
-  }
-  _apiBase = candidates[0]
+export async function ensureBaseDetected() {
+  return getApiBase()
 }
 
-export function ensureBaseDetected() {
-  if (!_detectPromise) _detectPromise = _detect()
-  return _detectPromise
-}
+export { getRuntimeConfig, setRuntimeConfig, getProxyBase, hasProxy }

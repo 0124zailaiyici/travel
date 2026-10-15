@@ -3,7 +3,8 @@
     { "path": "pages/index/index", "style": { "navigationBarTitleText": "花期", "enablePullDownRefresh": true } },
     { "path": "pages/search/search", "style": { "navigationBarTitleText": "搜索结果", "enablePullDownRefresh": true } },
     { "path": "pages/detail/detail", "style": { "navigationBarTitleText": "目的地详情" } },
-    { "path": "pages/favorites/favorites", "style": { "navigationBarTitleText": "我的收藏" } }
+    { "path": "pages/favorites/favorites", "style": { "navigationBarTitleText": "我的收藏" } },
+    { "path": "pages/settings/settings", "style": { "navigationBarTitleText": "服务设置" } }
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",

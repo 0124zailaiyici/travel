@@ -8,12 +8,20 @@
           <text class="logo-sub">发现四季好去处</text>
         </view>
       </view>
-      <text class="hdr-fav" @tap="goFavs">🔖</text>
+      <view class="hdr-acts">
+        <text class="hdr-btn" @tap="goSettings">设置</text>
+        <text class="hdr-btn" @tap="goFavs">收藏</text>
+      </view>
     </view>
 
     <view class="search-card" @tap="goSearch">
       <text class="s-icon">🔍</text>
       <text class="s-text">想去哪？输入目的地或主题…</text>
+    </view>
+    <view class="settings-entry" @tap="goSettings">
+      <text class="settings-entry-tt">服务设置</text>
+      <text class="settings-entry-sub">可改 AI 地址 / Key / 代理</text>
+      <text class="settings-entry-go">›</text>
     </view>
 
     <ShimmerCard v-if="!themes.length && !nearby.length && !inSeason.length" :showPills="true" :rows="2" :cols="2" :imgSize="120" />
@@ -53,6 +61,7 @@
       </view>
     </view>
 
+    <view class="app-ver" @tap="goSettings">版本 1.0.3 · 编译器 5.14</view>
     <view class="spacer"></view>
   </view>
 </template>
@@ -82,26 +91,56 @@ function cacheSet(key, data) {
   try { uni.setStorageSync('idx_' + key, JSON.stringify({ ts: Date.now(), data })) } catch {}
 }
 
-async function load() {
+async function load(force = false) {
   try {
-    monthText.value = mn[new Date().getMonth() + 1] + '推荐'
-    const loc = await getLocation()
-    // try cache first
-    const ct = cacheGet('themes', 300000)
-    const cs = cacheGet('inSeason', 300000)
+    monthText.value = mn[new Date().getMonth() + 1] + '当季'
+
+    // 1) 主题/当季
+    const ct = cacheGet('themes', 24 * 60 * 60 * 1000)
+    const cs = cacheGet('inSeason', 24 * 60 * 60 * 1000)
+    const cn = cacheGet('nearby', 15 * 60 * 1000)
     if (ct) themes.value = ct
     if (cs) inSeason.value = cs
-    const [t, n, s] = await Promise.all([api.getHotThemes(), api.getNearby(loc), api.getInSeason()])
-    themes.value = t; nearby.value = n; inSeason.value = s
+    if (cn) nearby.value = cn
+
+    const [t, s] = await Promise.all([api.getHotThemes(), api.getInSeason()])
+    themes.value = t
+    inSeason.value = s
     cacheSet('themes', t)
     cacheSet('inSeason', s)
-  } catch(e) { console.error(e); uni.showToast({ title: '加载失败，下拉重试', icon: 'none' }) }
+
+    // 2) 定位与附近
+    const loc = await getLocation({ timeout: 1800, allowCache: !force })
+    const localNearby = await api.getNearbyFast(loc)
+    if (localNearby && localNearby.length) nearby.value = localNearby
+
+    // 3) 附近增强
+    api.getNearby(loc).then((n) => {
+      if (n && n.length) {
+        nearby.value = n
+        cacheSet('nearby', n)
+      }
+    }).catch(() => {})
+  } catch (e) {
+    console.error(e)
+    try {
+      if (!themes.value.length) themes.value = await api.getHotThemes()
+      if (!inSeason.value.length) inSeason.value = await api.getInSeason()
+      if (!nearby.value.length) nearby.value = await api.getNearbyFast(null)
+    } catch {}
+  }
 }
-onMounted(() => load())
-onPullDownRefresh(() => load().finally(() => uni.stopPullDownRefresh()))
+onMounted(() => load(false))
+onPullDownRefresh(() => load(true).finally(() => uni.stopPullDownRefresh()))
 function retryLocation() {
   clearLocationCache()
-  load()
+  load(true)
+}
+function goSettings() {
+  uni.navigateTo({
+    url: '/pages/settings/settings',
+    fail: () => uni.showToast({ title: '设置页打开失败，请重新打包', icon: 'none' })
+  })
 }
 function goFavs() { uni.navigateTo({ url: '/pages/favorites/favorites' }) }
 function goSearch() { uni.navigateTo({ url: '/pages/search/search' }) }
@@ -116,17 +155,24 @@ function goDetail(id) {
 
 <style>
 .home { padding: 0 0 40rpx; min-height: 100vh; background: #FDF8F4; }
-.header { padding: 24rpx 28rpx 8rpx; }
+.app-ver { text-align: center; font-size: 22rpx; color: #B5A5A0; padding: 12rpx 0 8rpx; }
+.header { padding: 24rpx 28rpx 8rpx; display: flex; justify-content: space-between; align-items: center; }
 .logo-area { display: flex; align-items: center; gap: 14rpx; }
 .logo-icon { font-size: 48rpx; }
 .logo-title { font-size: 40rpx; font-weight: 700; color: #2C2422; letter-spacing: 4rpx; line-height: 1.2; }
 .logo-title .rose { color: #C4817A; }
 .logo-sub { font-size: 22rpx; color: #8A7A76; margin-top: 2rpx; }
-.hdr-fav { font-size: 36rpx; position: absolute; top: 28rpx; right: 28rpx; }
+.hdr-acts { display: flex; gap: 12rpx; align-items: center; flex-shrink: 0; }
+.hdr-btn { font-size: 24rpx; color: #5C4A46; background: rgba(255,255,255,0.92); border: 1rpx solid #E8D8D0; padding: 10rpx 18rpx; border-radius: 999rpx; }
+.hdr-fav { font-size: 36rpx; }
 
 .search-card { margin: 16rpx 24rpx 28rpx; padding: 26rpx 28rpx; background: rgba(255,255,255,0.92); border-radius: 24rpx; box-shadow: 0 4rpx 24rpx rgba(196,129,122,0.08); display: flex; align-items: center; gap: 16rpx; }
 .s-icon { font-size: 28rpx; }
 .s-text { font-size: 28rpx; color: #8A7A76; }
+.settings-entry { margin: 0 24rpx 20rpx; padding: 18rpx 22rpx; background: #FFF6F0; border-radius: 16rpx; display: flex; align-items: center; gap: 12rpx; }
+.settings-entry-tt { font-size: 26rpx; color: #9A5E58; font-weight: 600; }
+.settings-entry-sub { flex: 1; font-size: 22rpx; color: #A0908C; }
+.settings-entry-go { font-size: 32rpx; color: #C4817A; }
 
 .section { margin-bottom: 32rpx; }
 .section-hd { display: flex; justify-content: space-between; align-items: baseline; padding: 0 28rpx; margin-bottom: 16rpx; }

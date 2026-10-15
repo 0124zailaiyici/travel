@@ -1,6 +1,9 @@
 <template>
   <view class="fp">
-    <view class="fp-hd">❤️ 我的收藏</view>
+    <view class="fp-hd-row">
+      <text class="fp-hd">❤️ 我的收藏</text>
+      <text class="fp-set" @tap="goSettings">设置</text>
+    </view>
     <ShimmerCard v-if="loading" :lines="3" :cols="1" :imgSize="160" :lineCount="3" />
     <view class="fp-empty" v-if="!loading && list.length === 0">
       <text class="fp-e-icon">🔖</text>
@@ -20,6 +23,9 @@ import { getUserId, ensureUserId } from '../../api/user.js'
 import DestCard from '../../components/DestCard.vue'
 import ShimmerCard from '../../components/ShimmerCard.vue'
 
+function goSettings() {
+  uni.navigateTo({ url: '/pages/settings/settings' })
+}
 const list = ref([])
 const loading = ref(true)
 
@@ -40,6 +46,8 @@ function goDetail(id) {
 
 <style>
 .fp { min-height: 100vh; background: #FDF8F4; padding: 20rpx 24rpx; }
+.fp-hd-row { display: flex; justify-content: space-between; align-items: center; padding: 24rpx 24rpx 8rpx; }
+.fp-set { font-size: 24rpx; color: #C4817A; padding: 8rpx 16rpx; background: #FFF6F0; border-radius: 999rpx; }
 .fp-hd { font-size: 34rpx; font-weight: 700; color: #2C2422; margin-bottom: 24rpx; }
 .fp-empty { text-align: center; padding: 120rpx 0; }
 .fp-e-icon { font-size: 64rpx; display: block; margin-bottom: 16rpx; }

@@ -73,7 +73,13 @@
       </scroll-view>
     </view>
 
-    <text class="sp-count" v-if="!loading && displayList.length">共 <text class="hl">{{ total }}</text> 个结果</text>
+    <view class="ai-summary" v-if="aiSummary || searched">
+      <view class="ai-summary-row">
+        <text class="ai-summary-tt">{{ aiSummary ? ('✨ ' + aiSummary) : (aiLoading ? '🤖 AI 推荐生成中…' : '本地/地图结果') }}</text>
+        <text class="ai-refresh" v-if="searched && query.trim()" @tap="refreshAi">{{ aiLoading ? '刷新中…' : 'AI 刷新推荐' }}</text>
+      </view>
+    </view>
+    <text class="sp-count" v-if="!loading && displayList.length">共 <text class="hl">{{ total }}</text> 个结果 · {{ resultProvider || 'local' }}</text>
 
     <!-- shimmer -->
     <ShimmerCard v-if="loading" :rows="4" :cols="1" :imgSize="200" :lineCount="3" :lineWidths="['w60','w90','w40']" />
@@ -109,7 +115,10 @@ const displayList = ref([])
 const nearbyList = ref([])
 const nbLoaded = ref(false)
 const loading = ref(false)
+const aiSummary = ref('')
+const resultProvider = ref('')
 const searched = ref(false)
+const aiLoading = ref(false)
 const sortBy = ref('distance')
 const showPanel = ref(false)
 const page = ref(1)
@@ -117,6 +126,7 @@ const total = ref(0)
 const hasMore = ref(false)
 const loadingMore = ref(false)
 let lastParams = null
+let searchSeq = 0
 
 // filters
 const allThemes = ref([])
@@ -171,9 +181,10 @@ function saveHistory(q) {
 onLoad(async (o) => {
   loadHistory()
   browseLoading.value = true
-  const realUid = await ensureUserId()
-  api.getHistory(realUid || getUserId()).then(r => { browseHistory.value = (r || []).slice(0, 10) }).catch(() => {})
-    .finally(() => { browseLoading.value = false })
+  ensureUserId().then((realUid) => {
+    api.getHistory(realUid || getUserId()).then(r => { browseHistory.value = (r || []).slice(0, 10) }).catch(() => {})
+      .finally(() => { browseLoading.value = false })
+  }).catch(() => { browseLoading.value = false })
   allThemes.value = await api.getAllThemes()
   if (o.q) { query.value = o.q; doSearch() }
   else if (o.theme) { filterTheme.value = o.theme; doSearch() }
@@ -186,13 +197,20 @@ onReachBottom(() => {
 
 async function loadNearby() {
   try {
-    const loc = await getLocation()
-    if (loc) {
-      const res = await api.searchDestinations({ lat: loc.lat, lng: loc.lng })
-      nearbyList.value = res.list || res
-    }
-  } catch(e) { console.error(e); uni.showToast({ title: '获取附近推荐失败', icon: 'none' }) }
-  finally { nbLoaded.value = true }
+    const loc = await getLocation({ timeout: 1800, allowCache: true })
+    // 注释
+    const fast = await api.getNearbyFast(loc)
+    nearbyList.value = fast || []
+    // 注释
+    api.getNearby(loc).then((n) => {
+      if (n && n.length) nearbyList.value = n
+    }).catch(() => {})
+  } catch (e) {
+    console.error(e)
+    try { nearbyList.value = await api.getNearbyFast(null) } catch {}
+  } finally {
+    nbLoaded.value = true
+  }
 }
 
 function onInput() {
@@ -216,25 +234,113 @@ function toggleTheme(id) {
 function onRatingChange(r) { filterRating.value = r; doSearch() }
 function onDurationChange(k) { filterDuration.value = k; doSearch() }
 
+function applyFilters() {
+  const max = activeDist.value
+  displayList.value = !max
+    ? [...list.value]
+    : list.value.filter((d) => (d.distance ?? 9999) <= max)
+}
+
+async function refreshAi() {
+  if (!query.value.trim() || aiLoading.value) return
+  const seq = ++searchSeq
+  aiLoading.value = true
+  uni.showLoading({ title: 'AI 刷新中…', mask: true })
+  let toastTitle = ''
+  try {
+    const loc = await getLocation({ timeout: 1500, allowCache: true })
+    const params = {
+      q: query.value.trim(),
+      lat: loc?.lat,
+      lng: loc?.lng,
+      realtime: false,
+      ai: true,
+      force: true,
+      pageSize: 100,
+    }
+    if (filterTheme.value) params.theme = filterTheme.value
+    if (filterRating.value) params.minRating = filterRating.value
+    if (filterDuration.value) params.maxDuration = filterDuration.value
+    const aiFull = await api.searchDestinations(params, 1)
+    if (seq !== searchSeq) return
+    if (aiFull?.list?.length) {
+      list.value = aiFull.list
+      total.value = aiFull.total || aiFull.list.length
+      hasMore.value = false
+      aiSummary.value = aiFull.summary || '已按最新 AI 结果刷新'
+      resultProvider.value = aiFull.provider || 'ai'
+      applyFilters()
+      toastTitle = aiFull.provider === 'local'
+        ? 'AI 暂不可用，已保留本地结果'
+        : 'AI 推荐已更新'
+    } else {
+      toastTitle = '暂无新的 AI 结果'
+    }
+  } catch (e) {
+    console.error(e)
+    const msg = e?.message || e?.errMsg || '网络/超时'
+    toastTitle = 'AI 刷新失败: ' + String(msg).slice(0, 18)
+  } finally {
+    aiLoading.value = false
+    try { uni.hideLoading() } catch {}
+  }
+  if (toastTitle) uni.showToast({ title: toastTitle, icon: 'none' })
+}
+
 async function doSearch() {
+  const seq = ++searchSeq
   showPanel.value = false
   searched.value = true
   page.value = 1
   loading.value = true
   if (query.value.trim()) saveHistory(query.value)
   try {
-    const loc = await getLocation()
-    const params = { q: query.value.trim(), lat: loc?.lat, lng: loc?.lng }
+    const loc = await getLocation({ timeout: 1200, allowCache: true })
+    const params = { q: query.value.trim(), lat: loc?.lat, lng: loc?.lng, realtime: false }
     if (filterTheme.value) params.theme = filterTheme.value
     if (filterRating.value) params.minRating = filterRating.value
     if (filterDuration.value) params.maxDuration = filterDuration.value
-    lastParams = params
+    // 本地结果先返回
     const res = await api.searchDestinations(params, 1)
+    if (seq !== searchSeq) return
+    lastParams = params
     list.value = res.list || []
     total.value = res.total || res.list?.length || 0
     hasMore.value = list.value.length < total.value
-  } catch(e) { console.error(e); uni.showToast({ title: '搜索失败，请重试', icon: 'none' }) }
-  finally { loading.value = false }
+    applyFilters()
+    // 本地秒开 + 地图/AI 后台增强
+    if (params.q) {
+      aiSummary.value = ''
+      api.searchDestinations({ ...params, realtime: true, ai: false }, 1).then((full) => {
+        if (seq !== searchSeq) return
+        if (full?.list?.length) {
+          list.value = full.list
+          total.value = full.total || full.list.length
+          hasMore.value = list.value.length < total.value
+          resultProvider.value = full.provider || 'map'
+          applyFilters()
+        }
+      }).catch(() => {}).finally(() => {
+        if (seq !== searchSeq) return
+        api.searchDestinations({ ...params, realtime: false, ai: true }, 1).then((aiFull) => {
+          if (seq !== searchSeq) return
+          if (aiFull?.list?.length) {
+            list.value = aiFull.list
+            total.value = aiFull.total || aiFull.list.length
+            hasMore.value = list.value.length < total.value
+            aiSummary.value = aiFull.summary || ''
+            resultProvider.value = aiFull.provider || 'ai'
+            applyFilters()
+          }
+        }).catch(() => {})
+      })
+    }
+  } catch (e) {
+    console.error(e)
+    if (seq === searchSeq) uni.showToast({ title: '搜索失败', icon: 'none' })
+  } finally {
+    if (seq === searchSeq) loading.value = false
+  }
 }
 
 async function loadMore() {
@@ -262,10 +368,7 @@ function sortList() {
 }
 
 // distance filter
-watch([list, activeDist], () => {
-  const max = activeDist.value
-  displayList.value = !max ? list.value : list.value.filter(d => (d.distance || 9999) <= max)
-}, { immediate: true })
+watch([list, activeDist], applyFilters, { immediate: true })
 
 onPullDownRefresh(() => (searched.value ? doSearch() : loadNearby()).finally(() => uni.stopPullDownRefresh()))
 
@@ -326,4 +429,10 @@ function goBack() { uni.navigateBack() }
 
 .sp-suggest { margin: 0 24rpx; background: #fff; border-radius: 12rpx; box-shadow: 0 4rpx 20rpx rgba(44,36,34,0.08); position: relative; z-index: 10; }
 .sg-item { padding: 20rpx 24rpx; font-size: 26rpx; color: #2C2422; border-bottom: 1rpx solid #f5efeb; }
+.ai-summary { margin: 8rpx 24rpx 0; padding: 16rpx 18rpx; background: #FFF6F0; border-radius: 16rpx; }
+.ai-summary-tt { font-size: 24rpx; color: #9A5E58; line-height: 1.5; flex: 1; }
+
+.ai-summary-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12rpx; }
+.ai-refresh { flex-shrink: 0; font-size: 22rpx; color: #fff; background: #C4817A; padding: 8rpx 16rpx; border-radius: 20rpx; }
+
 </style>
