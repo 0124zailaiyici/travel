@@ -117,9 +117,16 @@ function buildDetailFast(id, loc) {
   const cachedAi = cacheGet('detail_ai', dest.id, 7 * 24 * 60 * 60 * 1000)
   if (cachedAi?.itinerary?.length && !cachedAi._fallback) {
     itinerary = cachedAi.itinerary
-    tips = cachedAi.tips || tips
-    budget = cachedAi.budget || budget
-    transportDetail = cachedAi.transport || transportDetail
+    // 必须按「有没有内容」判断，不能用 truthiness：
+    // 空数组和空对象在 JS 里都是真值，会把目的地自带的 tips / transportDetail
+    // 覆盖成空 —— 结果就是「避坑指南」整块消失、「交通方案」渲染成空白。
+    // AI 归一化那边 normalizeTips(undefined) 正好产出 []，transport 也可能为 {}。
+    if (Array.isArray(cachedAi.tips) && cachedAi.tips.length) tips = cachedAi.tips
+    if (cachedAi.budget && Object.keys(cachedAi.budget).length) budget = cachedAi.budget
+    const aiTransport = cachedAi.transport
+    if (aiTransport && (aiTransport.to_destination || aiTransport.around || aiTransport.parking)) {
+      transportDetail = aiTransport
+    }
     generating = false
   } else if (!itinerary.length) {
     generating = true
@@ -180,9 +187,12 @@ async function enrichDetail(detail, loc, { force = false } = {}) {
         const gen = await withTimeout(generateItinerary(detail, { userLoc: loc, force }), 50000, null)
         if (gen?.itinerary?.length) {
           detail.itinerary = gen.itinerary
-          detail.tips = gen.tips || detail.tips
-          detail.budget = gen.budget || detail.budget
-          detail.transportDetail = gen.transport || detail.transportDetail
+          // 同 buildDetailFast：AI 归一化会给空的 tips/budget/transport，
+          // 用 truthiness 判断会被空数组/空对象覆盖掉已有内容。
+          if (Array.isArray(gen.tips) && gen.tips.length) detail.tips = gen.tips
+          if (gen.budget && Object.keys(gen.budget).length) detail.budget = gen.budget
+          const gt = gen.transport
+          if (gt && (gt.to_destination || gt.around || gt.parking)) detail.transportDetail = gt
           detail.generating = !!gen._fallback
           if (!gen._fallback) cacheSet('detail_ai', detail.id, gen)
         } else {
@@ -322,9 +332,11 @@ export const api = {
     const gen = await withTimeout(generateItinerary(detail, { userLoc: loc, force: true }), 50000, null)
     if (gen?.itinerary?.length) {
       detail.itinerary = gen.itinerary
-      detail.tips = gen.tips || detail.tips
-      detail.budget = gen.budget || detail.budget
-      detail.transportDetail = gen.transport || detail.transportDetail
+      // 同 buildDetailFast / enrichDetail：空数组、空对象都是真值，不能用来判断
+      if (Array.isArray(gen.tips) && gen.tips.length) detail.tips = gen.tips
+      if (gen.budget && Object.keys(gen.budget).length) detail.budget = gen.budget
+      const gt = gen.transport
+      if (gt && (gt.to_destination || gt.around || gt.parking)) detail.transportDetail = gt
       detail.generating = !!gen._fallback
       if (!gen._fallback) cacheSet('detail_ai', detail.id, gen)
     } else {

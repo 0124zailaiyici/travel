@@ -104,7 +104,11 @@
         </view>
 
         <!-- === TRANSPORT === -->
-        <view class="sec" v-if="detail.route || detail.transportDetail || detail.transport_guide">
+        <!-- 这一块恒定渲染：里面的「暂无详细交通指南」兜底原本嵌在一个
+             v-if="route || transportDetail || transport_guide" 之内，
+             而外层为假的条件恰好就是「三者都没有」——也就是最该显示这句话的时候。
+             结果那个 v-else-if 永远不可达，少数目的地整块消失且没有任何说明。 -->
+        <view class="sec">
           <view class="sec-hd">
             <text class="sec-tt">🚗 交通方案</text>
             <text class="sec-toggle" @tap="refreshByLocation">{{ aiRefreshing ? '刷新中…' : '按位置重算' }}</text>
