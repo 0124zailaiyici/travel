@@ -79,21 +79,37 @@ Travel_planning/
 │   │       ├── map.js          # 腾讯地图直连（POI / 路线）
 │   │       ├── deepseek.js     # AI 行程生成（OpenAI 兼容格式）
 │   │       ├── aiRecommend.js  # AI 增强搜索 / 附近推荐
+│   │       ├── http.js         # uni.request 封装 + completionContent() 解包
+│   │       ├── appInfo.js      # 版本号唯一来源（首页 footer 与设置页共用）
 │   │       ├── weather.js      # open-meteo 天气
 │   │       ├── userStore.js    # 收藏 / 历史 / 评论（仅本地 storage）
 │   │       ├── config.js       # 运行时配置
 │   │       └── config.local.js # 空模板（已提交，保证 clone 能构建）
 │   ├── keystore/               # 签名证书（已 gitignore）
-│   ├── local-repack-apk.ps1    # 重打包 + 重签名
+│   ├── project.config.json     # 微信开发者工具配置（uni-app 从项目根拷进产物）
+│   ├── local-repack-apk.ps1    # 重打包 + 重签名（含过期守卫，见第四节）
 │   ├── local-repack-apk.bat    # 一键：编译 + 重打包 + 重签名
 │   ├── build-apk.bat           # 一键：只编译，产出 dist/build/app（走 HBuilderX 云打包用）
 │   └── dev.bat                 # 微信小程序开发构建
-├── design/                     # 早期 HTML 设计稿
-└── open-design/                # 无关的 vendored 项目，可忽略
+└── open-design/                # 无关的第三方项目，可忽略（见下）
 ```
 
-> `proxy-worker/`（Cloudflare Worker）与 `server/`（早期 Node 服务端）已于 2026-10-16 删除。
-> 两者都不再参与构建。需要原始文件时用 `git log -- proxy-worker server` 回溯。
+> **2026-10-16 清理**：`proxy-worker/`、`server/`（死代码，233 MB）、
+> `design/`、`client-uni/design-prototype/`、`ui-preview.html`（早期 HTML 设计稿，
+> 已被实现取代且无任何代码引用）均已删除。需要原始文件时用
+> `git log -- proxy-worker server design ui-preview.html` 回溯。
+>
+> 微信开发者工具的两个配置原先放在**仓库根**，但根目录没有 `app.json` —— 说明是
+> 「把仓库根当小程序根」时留下的，位置是错的（uni-app 的小程序产物在
+> `client-uni/dist/*/mp-weixin/`）。已挪到 `client-uni/`，uni-app 会自己拷进产物。
+
+### `open-design/` 是什么
+
+**与本项目无关**，是另一个独立仓库（`https://github.com/nexu-io/open-design.git`，
+自带 `.git`，约 2.4 GB / 6 万个文件），当初被 clone 到这个目录下。
+
+它**不在本仓库的版本控制里**（`.gitignore` 里忽略，`git ls-files` 为 0 个文件），
+所以删不删都不影响 clone 和构建。留着只是占磁盘。
 
 ---
 
