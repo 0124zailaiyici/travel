@@ -1,4 +1,4 @@
-import { httpPost } from './http.js'
+import { httpPost, completionContent } from './http.js'
 import { getRuntimeConfig, getAiModel } from './config.js'
 import { cacheGet, cacheSet, cacheDel } from './cache.js'
 import { getAllDestinations, getDestinationByName, attachDistance, sortByDistanceOrRating } from './localDb.js'
@@ -102,12 +102,14 @@ async function callDirectAi(prompt) {
       { role: 'user', content: prompt },
     ],
     temperature: 0.4,
-    max_tokens: 900,
+    // 2500 而不是 900，理由同 deepseek.js：推理模型的思考过程会吃掉大量额度，
+    // 给小了直接 HTTP 500 {"error":"empty response content"}。
+    max_tokens: 2500,
   }, {
     'Content-Type': 'application/json',
     Authorization: 'Bearer ' + key,
-  }, 45000)
-  return { content: data?.choices?.[0]?.message?.content || '' }
+  }, 60000)
+  return { content: completionContent(data) }
 }
 
 async function callRecommend(payload) {

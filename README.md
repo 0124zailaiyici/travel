@@ -229,7 +229,19 @@ pnpm run build:app-android      # 产出 dist/build/app
 脚本会输出 `dist/release/apk/__UNI__5B95181__<时间戳>_installfix.apk`，并自动
 校验 v1/v2/v3 签名。
 
-或用 `build-apk.bat` 一步到位。
+**更推荐直接用 `.bat`**：
+
+```
+local-repack-apk.bat            # 先编译，再调用上面的 ps1
+```
+
+> **`local-repack-apk.ps1` 只重打包，不重新编译。** 单独调它会拿 `dist/build/app` 里
+> 上一次的旧资源，配上从 `src/manifest.json` 读到的**新版本号**——APK 看起来升级了，
+> 里面跑的却是旧代码，而且设置页的「版本」读的是 APK 元数据，也会显示新版本号，
+> 完全看不出问题。这个坑真实踩过一小时。
+>
+> 所以脚本现在有一道**过期守卫**：只要 `src/` 下有文件比 `dist/build/app/app-service.js`
+> 新，就直接报错并让你先编译，不会静默打包旧资源。
 
 > `dist/cache/` 是 apktool 的解包中间产物，每次打包都会重建，可以随时删除
 > （实测约 700 MB）。
@@ -240,7 +252,7 @@ pnpm run build:app-android      # 产出 dist/build/app
 adb install -r dist/release/apk/__UNI__5B95181__*_installfix.apk
 ```
 
-包名 `uni.app.UNIHUAXI001`，`versionCode 104` / `versionName 1.0.4`，
+包名 `uni.app.UNIHUAXI001`，`versionCode 105` / `versionName 1.0.5`，
 `install-location: internalOnly`（规避 `INSTALL_FAILED_INSUFFICIENT_STORAGE`）。
 
 > **必须解锁手机**。锁屏状态下系统弹不出安装确认框，`adb install` 会直接报
@@ -403,6 +415,8 @@ pnpm run build:h5      # 或 pnpm run dev:h5
 | 实时路线卡片 | 详情页「🚗 交通方案」出现「驾车 1536km · 约1013分钟」（南宁→九寨沟）。直线 1250km / 实际道路 1536km / 16.9 小时，三者互相印证 |
 | 配额分配生效 | 分配后 4 个端点全部 `status=0`，逐步生效（约 1 分钟） |
 | 版本 1.0.4 升级 | `adb install -r` 覆盖安装成功，`versionCode=104`；首页 footer 与设置页均显示「版本 1.0.4」；`firstInstallTime` 保留，浏览记录/最近搜索都还在 |
+| 版本 1.0.5 升级 | `versionCode=105`，覆盖安装成功，设置页显示「版本 1.0.5」 |
+| **AI 实时生成（ClinePass）** | 详情页点「按我的位置刷新」→ 出现「正在按你的位置重新生成…」加载态 → 行程由内置模板换成 AI 生成内容，且**正确带上用户所在城市南宁**（南宁吴圩机场 T3 → 成都天府 → 九寨黄龙机场，含备选高铁方案）。避坑指南同样带南宁。无崩溃、无 HTTP 错误 |
 | 搜索页实时 POI | 搜索结果里出现「五圣宫」「南宁市灵龟山景区」「青秀山风景区-樱花园」等 ★0 + 完整地址的腾讯 POI |
 
 ### 注意：`adb shell input tap` 对部分控件不可靠
@@ -442,19 +456,64 @@ pnpm run build:h5      # 或 pnpm run dev:h5
 > `place/v1/search` 只有 200/天。应用靠缓存摊薄：POI 搜索缓存 30 分钟、路线缓存 24 小时，
 > 个人自用一天几十次，有余量。**但要避免写出「注定返回 0 条还照样发」的调用**（见下）。
 
-### AI 实时生成：目前是关着的（有意为之）
+### AI 实时生成：已跑通（2026-10-16）
 
-设置页的 **AI Key 为空**，页面提示「填了才会调用 AI 生成行程；为空则使用内置模板行程」。
-所以详情页看到的行程全部来自 `bundle.json` 里预置的内容，**不是当场调用 DeepSeek 的结果**。
+设置页的 **AI Key 为空**时，详情页行程来自 `bundle.json` 预置内容；
+填上 Key 后才会当场调用 AI。本仓库不保存任何 Key。
 
-这不算缺陷：Key 由使用者自行填写，本仓库不保存。填上 Key 后 AI 路径才会真正跑起来，
-**届时需要重新验证**（该路径至今没有被真实调用过）。
+**该链路已于 2026-10-16 用 ClinePass 在真机上完整验证通过**（此前从未被真实调用过）。
+详情页点「按我的位置刷新」，行程从内置模板换成 AI 生成的内容，并且**正确带上了用户所在城市**：
+内置模板写的是「初探九寨：树正沟精华 / 从沟口乘观光车到树正寨」，
+AI 生成的是「第1天｜南宁出发·抵达九寨沟沟口（海拔适应日）/ 首选南宁吴圩机场(T3) 早班机飞成都天府…
+转成都—九寨黄龙机场」，避坑指南里也写了「与后续南宁行程之间预留半天以上」。
+
+#### 接任何 OpenAI 兼容网关时踩过的两个坑
+
+**坑 1：响应外面可能多包一层 `data`。** 标准 OpenAI 是
+`{"choices":[{"message":{"content":"..."}}]}`，而 ClinePass 返回的是
+`{"success":true,"data":{"choices":[...]}}`。
+直接读 `res.choices` 永远是 `undefined`，表现为「HTTP 200 但内容为空」。
+`services/http.js` 的 `completionContent()` 负责解包，只在「`data` 里确实有 `choices`」时才解，
+不会误伤腾讯地图那种本来就有 `data` 字段的接口。
+
+**坑 2：推理模型的 `max_tokens` 要给够。** `deepseek-v4.1-flash` 这类模型会先花
+**2000+ token 思考**，额度给小了直接返回 **HTTP 500 `{"error":"empty response content"}`**——
+看起来像网络故障或网关挂了，实际只是 token 不够。实测阈值：
+
+| max_tokens | 结果 |
+|---|---|
+| 1400（原值） | ❌ HTTP 500 |
+| 2500 | ❌ HTTP 500 |
+| 4000 | ✅ 正常，思考用掉 2052 token |
+| 8000 | ✅ 正常 |
+
+所以 `deepseek.js` 用 4000、`aiRecommend.js` 用 2500（原来分别是 1400 / 900，**必然失败**）。
+非推理模型（`deepseek-chat`）给大额度只是「允许更长输出」，没有副作用。
+
+#### ClinePass 配置示例
+
+```js
+// client-uni/src/services/config.local.private.js（已 gitignore）
+export default {
+  tencentMapKey: '...',
+  deepseekBase: 'https://api.cline.bot/api/v1',
+  deepseekKey: 'sk_...',
+  aiModel: 'deepseek/deepseek-v4.1-flash',
+}
+```
+
+ClinePass 官方支持在 Cline 之外调用，见
+[文档](https://docs.cline.bot/getting-started/clinepass)。
+模型 ID 必须是 `provider/model` 形式（`GET /api/v1/models` 能列出 465 个），
+只写 `deepseek-chat` 会被拒：`invalid model format. Expected format: modelType/model`。
+一次行程生成约 **$0.0013–0.0037**。
+
+> 改完 `config.local.private.js` 必须**重新编译**才生效（它是编译期注入的）。
+> 而 APK 里已有的存储配置优先级高于编译默认值，所以要进设置页点一次「恢复默认」才会切过去。
 
 ### 尚未验证
 
-| 项 | 原因 |
-|---|---|
-| AI 实时生成行程（填 Key 后） | 当前 AI Key 为空，走的是内置数据。真实调用 DeepSeek 的链路未验证 |
+（暂无。AI 实时生成已于 2026-10-16 在真机验证通过。）
 
 ### 已验证（真实 HTTP，电脑端）
 

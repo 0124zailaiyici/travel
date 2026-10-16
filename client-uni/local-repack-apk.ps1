@@ -29,6 +29,47 @@ if (-not (Test-Path $wwwSource)) {
   throw "missing $wwwSource; run pnpm run build:app-android first"
 }
 
+# Staleness guard.
+#
+# This script only REPACKS -- it never recompiles. Calling it directly after
+# editing src/ silently ships the previous build's web assets inside a
+# correctly-versioned APK: the version string comes from src\manifest.json, so
+# the app looks upgraded while running old code. That cost an hour once.
+#
+# So refuse when anything under src/ is newer than the compiled bundle.
+# Use local-repack-apk.bat (builds, then calls this) to avoid the problem.
+$bundleMarker = Join-Path $wwwSource "app-service.js"
+if (Test-Path $bundleMarker) {
+  $bundleTime = (Get-Item -LiteralPath $bundleMarker).LastWriteTimeUtc
+  $srcRoot = Join-Path $root "src"
+  $newest = Get-ChildItem -LiteralPath $srcRoot -Recurse -File |
+    Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+  foreach ($extra in @("vite.config.js", "package.json")) {
+    $p = Join-Path $root $extra
+    if (Test-Path $p) {
+      $f = Get-Item -LiteralPath $p
+      if ($f.LastWriteTimeUtc -gt $newest.LastWriteTimeUtc) { $newest = $f }
+    }
+  }
+  if ($newest -and $newest.LastWriteTimeUtc -gt $bundleTime) {
+    $age = [int]((($newest.LastWriteTimeUtc) - $bundleTime).TotalMinutes)
+    throw @"
+stale build: $($newest.Name) is newer than the compiled bundle by $age minute(s).
+
+  newest source : $($newest.FullName)
+                  $($newest.LastWriteTimeUtc) UTC
+  compiled      : $bundleMarker
+                  $bundleTime UTC
+
+This script does not compile. Run the build first:
+
+  pnpm run build:app-android
+
+or just use local-repack-apk.bat, which does both.
+"@
+  }
+}
+
 # Pick the newest HBuilderX cloud-pack output, e.g. __UNI__5B95181__20260715213156.apk.
 # The 14-digit timestamp pattern deliberately excludes the *_installfix.apk files
 # this script produces -- otherwise a second run would repack an already-repacked APK.

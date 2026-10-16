@@ -1,4 +1,4 @@
-import { httpPost } from './http.js'
+import { httpPost, completionContent } from './http.js'
 import { getRuntimeConfig, getAiModel } from './config.js'
 import { cacheGet, cacheSet, cacheDel } from './cache.js'
 
@@ -179,12 +179,16 @@ async function callDirectAi(prompt) {
       { role: 'user', content: prompt },
     ],
     temperature: 0.5,
-    max_tokens: 1400,
+    // 4000 而不是 1400：推理模型（如 deepseek-v4.1-flash，ClinePass 上就是）
+    // 会先花 2000+ token 思考，额度给小了会直接返回 HTTP 500
+    // {"error":"empty response content"} —— 看起来像网络故障，实际是 token 不够。
+    // 非推理模型（deepseek-chat）给 4000 也只是「允许更长输出」，没有副作用。
+    max_tokens: 4000,
   }, {
     'Content-Type': 'application/json',
     Authorization: 'Bearer ' + key,
-  }, 50000)
-  return data?.choices?.[0]?.message?.content || ''
+  }, 60000)
+  return completionContent(data)
 }
 
 export async function generateItinerary(destination, options = {}) {

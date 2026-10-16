@@ -2,8 +2,8 @@
   "name": "花期",
   "appid": "__UNI__5B95181",
   "description": "按主题和距离推荐旅行目的地",
-  "versionName": "1.0.4",
-  "versionCode": "104",
+  "versionName": "1.0.5",
+  "versionCode": "105",
   "transformPx": false,
   "app-plus": {
     "usingComponents": true,

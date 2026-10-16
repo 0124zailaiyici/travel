@@ -10,7 +10,7 @@ import { ref } from 'vue'
  * 优先读运行时真实版本（打包时由 manifest.json 注入），读不到才用兜底值。
  * 升版本时只需改 manifest.json 的 versionName/versionCode 和这里的兜底值。
  */
-export const appVersion = ref('1.0.4')
+export const appVersion = ref('1.0.5')
 
 export function readAppVersion() {
   // #ifdef APP-PLUS
