@@ -28,7 +28,7 @@ if errorlevel 1 goto :err
 
 echo.
 echo Done. Install the newest timestamped APK under dist\release\apk
-echo Verify: home page footer shows "1.0.3 / 5.14" and the Settings entry exists.
+echo Verify: Settings page shows "1.0.4 / 5.14" and the Settings entry exists.
 exit /b 0
 
 :err

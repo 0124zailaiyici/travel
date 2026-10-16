@@ -33,7 +33,7 @@
 
     <view class="st-card">
       <text class="st-label">应用版本</text>
-      <text class="st-mono">版本 1.0.3 · 编译器 5.14 · 2026-07-16</text>
+      <text class="st-mono">版本 {{ appVersion }} · 编译器 5.14</text>
       <text class="st-hint">如果手机上看不到设置页，或弹 5.12/5.14 不匹配，说明装的是旧 APK，请重装本页显示的版本。</text>
     </view>
 
@@ -51,6 +51,7 @@
 import { ref, onMounted } from 'vue'
 import { getRuntimeConfig, setRuntimeConfig, resetRuntimeConfig, getDefaults } from '../../services/config.js'
 import { cacheClearNs } from '../../services/cache.js'
+import { appVersion, readAppVersion } from '../../services/appInfo.js'
 
 const form = ref({
   deepseekBase: '',
@@ -59,6 +60,7 @@ const form = ref({
   tencentMapKey: '',
 })
 const active = ref({})
+// 版本号来自 appInfo（首页 footer 共用同一份），不再各自硬编码
 
 function load() {
   const cfg = getRuntimeConfig()
@@ -106,7 +108,10 @@ function clearAiCache() {
   uni.showToast({ title: 'AI 缓存已清空', icon: 'none' })
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  readAppVersion()
+})
 </script>
 
 <style>

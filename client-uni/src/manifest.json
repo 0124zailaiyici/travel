@@ -2,8 +2,8 @@
   "name": "花期",
   "appid": "__UNI__5B95181",
   "description": "按主题和距离推荐旅行目的地",
-  "versionName": "1.0.3",
-  "versionCode": "103",
+  "versionName": "1.0.4",
+  "versionCode": "104",
   "transformPx": false,
   "app-plus": {
     "usingComponents": true,
@@ -87,13 +87,7 @@
       "mode": "hash"
     },
     "devServer": {
-      "port": 3000,
-      "proxy": {
-        "/api": {
-          "target": "http://localhost:3002",
-          "changeOrigin": true
-        }
-      }
+      "port": 3000
     }
   },
   "vueVersion": "3"

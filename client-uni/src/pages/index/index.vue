@@ -67,7 +67,7 @@
       </view>
     </view>
 
-    <view class="app-ver" @tap="goSettings">版本 1.0.3 · 编译器 5.14</view>
+    <view class="app-ver" @tap="goSettings">版本 {{ appVersion }} · 编译器 5.14</view>
     <view class="spacer"></view>
   </view>
 </template>
@@ -79,6 +79,7 @@ import { api } from '../../api/index.js'
 import { getLocation, clearLocationCache } from '../../api/location.js'
 import DestCard from '../../components/DestCard.vue'
 import ShimmerCard from '../../components/ShimmerCard.vue'
+import { appVersion, readAppVersion } from '../../services/appInfo.js'
 
 const themes = ref([]); const nearby = ref([]); const inSeason = ref([])
 const locState = ref('loading')   // loading | ok | fail
@@ -141,7 +142,10 @@ async function load(force = false) {
     } catch {}
   }
 }
-onMounted(() => load(false))
+onMounted(() => {
+  load(false)
+  readAppVersion()
+})
 onPullDownRefresh(() => load(true).finally(() => uni.stopPullDownRefresh()))
 function retryLocation() {
   clearLocationCache()

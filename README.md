@@ -29,8 +29,11 @@ Android APK（`app-android`），同时保留 H5 与微信小程序构建能力�
 把超时耗完才降级**。
 
 由于是个人自用（自己的 Key、自己的手机），藏 Key 的价值低于可用性，因此改为直连。
-`proxy-worker/` 目录保留但**已不参与构建**，那套多 Key 轮换逻辑以后若有国内可达的
-域名仍可复用。
+
+> **2026-10-16 变更**：`proxy-worker/` 与 `server/` 两个目录**已删除**。
+> 它们都不再参与构建，留着只会让人误以为还有后端可调。
+> 相关历史（多 Key 轮换、跨厂商降级）在 git 历史里仍可查到。
+> 如果要重建后端，`git log -- proxy-worker server` 能找到全部原始文件。
 
 ### 数据流
 
@@ -82,12 +85,15 @@ Travel_planning/
 │   │       └── config.local.js # 空模板（已提交，保证 clone 能构建）
 │   ├── keystore/               # 签名证书（已 gitignore）
 │   ├── local-repack-apk.ps1    # 重打包 + 重签名
-│   └── build-apk.bat           # 一键：编译 + 重打包
-├── proxy-worker/               # Cloudflare Worker（已弃用，保留备查）
-├── server/                     # 早期 Node 服务端（已弃用）
+│   ├── local-repack-apk.bat    # 一键：编译 + 重打包 + 重签名
+│   ├── build-apk.bat           # 一键：只编译，产出 dist/build/app（走 HBuilderX 云打包用）
+│   └── dev.bat                 # 微信小程序开发构建
 ├── design/                     # 早期 HTML 设计稿
 └── open-design/                # 无关的 vendored 项目，可忽略
 ```
+
+> `proxy-worker/`（Cloudflare Worker）与 `server/`（早期 Node 服务端）已于 2026-10-16 删除。
+> 两者都不再参与构建。需要原始文件时用 `git log -- proxy-worker server` 回溯。
 
 ---
 
@@ -234,7 +240,7 @@ pnpm run build:app-android      # 产出 dist/build/app
 adb install -r dist/release/apk/__UNI__5B95181__*_installfix.apk
 ```
 
-包名 `uni.app.UNIHUAXI001`，`versionCode 103` / `versionName 1.0.3`，
+包名 `uni.app.UNIHUAXI001`，`versionCode 104` / `versionName 1.0.4`，
 `install-location: internalOnly`（规避 `INSTALL_FAILED_INSUFFICIENT_STORAGE`）。
 
 > **必须解锁手机**。锁屏状态下系统弹不出安装确认框，`adb install` 会直接报

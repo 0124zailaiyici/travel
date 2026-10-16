@@ -3,15 +3,12 @@ dist/
 .env
 *.db
 *.log
-server/data/
 .DS_Store
+
 # config.local.js 是提交进仓库的空模板（保证 clone 下来能构建）
 # 真实 Key 放这里，不要提交：
 client-uni/src/services/config.local.private.js
 client-uni/keystore/
-proxy-worker/.secrets/
-proxy-worker/.wrangler/
-proxy-worker/dist/
 
 # 图片生成工具的原始输出（体积大，压缩后的成品在 client-uni/src/static/themes/）
 generate/
