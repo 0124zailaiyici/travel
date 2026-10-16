@@ -34,8 +34,20 @@ async function directTencent(path, params = {}) {
       keyword: path === 'nearby' ? '景点|公园|景区' : (params.keyword || ''),
       page_size: params.page_size || 20,
     }
-    if (path === 'nearby') data.boundary = 'nearby(' + params.lat + ',' + params.lng + ',' + (params.radius || 50000) + ')'
-    else if (params.city) data.boundary = 'region(' + params.city + ',0)'
+    if (path === 'nearby') {
+      data.boundary = 'nearby(' + params.lat + ',' + params.lng + ',' + (params.radius || 50000) + ')'
+    } else if (params.city) {
+      data.boundary = 'region(' + params.city + ',0)'
+    } else if (params.lat != null && params.lng != null) {
+      // 没有城市名但有坐标 -> 用附近搜索。
+      // 绝不能再拿关键词当城市名：region(公园,0) 是无效边界，腾讯返回 0 条，
+      // 白白消耗配额（地点搜索个人开发者只有 200 次/天）。
+      data.boundary = 'nearby(' + params.lat + ',' + params.lng + ',' + (params.radius || 50000) + ')'
+    } else {
+      // 既没有城市名也没有坐标：boundary 是必填参数（不传报 348），
+      // 发了也必然是 0 条，直接不发请求，省配额。
+      return { list: [], provider: 'tencent-direct' }
+    }
     const res = await httpGet('https://apis.map.qq.com/ws/place/v1/search', data, {}, 7000)
     if (res?.status !== 0) throw new Error(res?.message || '腾讯地图查询失败')
     return { list: (res.data || []).map((p) => normalizeTencentPoi(p, path === 'nearby')), provider: 'tencent-direct' }
@@ -94,12 +106,15 @@ async function mapGet(path, params = {}) {
   }
 }
 
-export async function searchPOI(keyword, city = '', offset = 20) {
+export async function searchPOI(keyword, city = '', offset = 20, loc = null) {
   if (!keyword) return []
-  const ck = 'search_' + keyword + '_' + city + '_' + offset
+  const lat = loc?.lat
+  const lng = loc?.lng
+  const locKey = lat != null && lng != null ? Number(lat).toFixed(2) + '_' + Number(lng).toFixed(2) : ''
+  const ck = 'search_' + keyword + '_' + city + '_' + locKey + '_' + offset
   const cached = cacheGet('map', ck, (getRuntimeConfig().searchCacheMin || 30) * 60 * 1000)
   if (cached) return cached
-  const data = await mapGet('search', { keyword, city, page_size: offset })
+  const data = await mapGet('search', { keyword, city, lat, lng, page_size: offset })
   const list = data?.list || []
   if (list.length) cacheSet('map', ck, list)
   return list

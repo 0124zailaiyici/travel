@@ -247,7 +247,9 @@ export const api = {
 
     // 实时地图 POI
     if (realtime && String(q || '').trim() && Number(pg) === 1) {
-      const pois = await withTimeout(searchPOI(String(q).trim(), city || String(q).trim()), 4500, [])
+      // 只传真正的城市名和坐标。原来传的是 city || q，等于把搜索词当城市名，
+      // 边界变成 region(公园,0) —— 无效，永远 0 条，还白烧配额。
+      const pois = await withTimeout(searchPOI(String(q).trim(), city, 20, { lat, lng }), 4500, [])
       if (pois?.length) {
         merged = uniqByName([...merged, ...attachDistance(pois, lat, lng)])
         provider = 'map'
